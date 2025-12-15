@@ -1,0 +1,8 @@
+type Response {
+    success: Boolean!
+    code: Int!
+    message: String!
+}
+
+scalar DateTime
+scalar Long
