@@ -1,0 +1,38 @@
+type Query {
+    getSampleData(filter: SampleDataFilteringInput): SampleDataResponse!
+}
+
+type Mutation {
+    createUpdateSampleData(input: SampleDataInput!): SampleDataResponse!
+}
+
+input SampleDataFilteringInput {
+    pageNumber: Int!
+    itemsPerPage: Int
+    keyword: String
+    uuid: String
+    dateFrom: DateTime
+    dateTo: DateTime
+    createdBy: ID
+    updatedBy: ID
+    active: Boolean
+}
+
+input SampleDataInput {
+    uuid: String
+    name: String!
+    description: String
+}
+
+type SampleDataResponse {
+    response: Response!
+    data: SampleDataEntity
+    dataList: [SampleDataEntity]
+}
+
+type SampleDataEntity {
+    id: ID
+    uuid: String!
+    name: String
+    description: String
+}

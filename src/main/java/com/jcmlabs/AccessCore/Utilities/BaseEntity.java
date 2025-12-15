@@ -12,10 +12,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.*;
 
 
+@MappedSuperclass
 @Getter
 @Setter
 @NoArgsConstructor
-public class BaseEntity {
+public abstract class BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -35,9 +36,6 @@ public class BaseEntity {
 
     @Column(name = "updated_by")
     private Long updatedBy;
-
-    @Column(name = "deleted", updatable = false)
-    private Boolean deleted = false;
 
     @Column(columnDefinition = "boolean default true")
     private Boolean active = true;
