@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 
 import com.jcmlabs.AccessCore.SampleModule.Entities.SampleDataEntity;
 import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataFilterInput;
+import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataInput;
 import com.jcmlabs.AccessCore.SampleModule.Services.SampleDataService;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 
@@ -16,8 +17,13 @@ import lombok.RequiredArgsConstructor;
 public class SampleDataController {
     private final SampleDataService sampleDataService;
 
+    @SchemaMapping(typeName = "Mutation")
+    public BaseResponse<SampleDataEntity> createUpdateSampleData(@Argument SampleDataInput input){
+        return sampleDataService.createUpdateSampleData(input);
+    }
+
     @SchemaMapping(typeName = "Query")
-    public BaseResponse<SampleDataEntity> getAllSampleData(@Argument SampleDataFilterInput filterInput){
-        return sampleDataService.getAllSampleData(filterInput);
+    public BaseResponse<SampleDataEntity> getSampleData(@Argument SampleDataFilterInput filter){
+        return sampleDataService.getAllSampleData(filter);
     }
 }

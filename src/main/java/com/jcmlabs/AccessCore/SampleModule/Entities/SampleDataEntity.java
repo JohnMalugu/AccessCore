@@ -18,7 +18,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table(name = "sample")
-@SoftDelete
+@SoftDelete()
 public class SampleDataEntity extends BaseEntity{
 
     @Column(name = "name")
