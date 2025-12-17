@@ -1,12 +1,12 @@
 type Query {
-    getSampleData(filter: SampleDataFilteringInput): SampleDataResponse!
+    getSampleData(filter: SampleDataFilterInput!): SampleDataResponse!
 }
 
 type Mutation {
     createUpdateSampleData(input: SampleDataInput!): SampleDataResponse!
 }
 
-input SampleDataFilteringInput {
+input SampleDataFilterInput {
     pageNumber: Int!
     itemsPerPage: Int
     keyword: String

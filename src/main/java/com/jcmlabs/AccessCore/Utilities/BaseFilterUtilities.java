@@ -51,9 +51,6 @@ public class BaseFilterUtilities {
             if (filterInput.getActive() != null) {
                 predicate = cb.and(predicate, cb.equal(root.get("active"), filterInput.getActive()));
             }
-
-            predicate = cb.and(predicate, cb.equal(root.get("deleted"), false));
-
             return predicate;
         };
     }
