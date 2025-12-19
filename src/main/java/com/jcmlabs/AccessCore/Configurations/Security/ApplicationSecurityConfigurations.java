@@ -17,7 +17,11 @@ public class ApplicationSecurityConfigurations {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests((authorize) -> authorize
-                    .requestMatchers("/auth/login")
+                    .requestMatchers(
+                        "/auth/**",
+                        "/graphiql/**",
+                        "/graphql/**"
+                    )
                     .permitAll()
                     .anyRequest().authenticated()
             )
