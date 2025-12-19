@@ -1,0 +1,87 @@
+package com.jcmlabs.AccessCore.Configurations.Security;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
+import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.TokenType;
+import com.jcmlabs.AccessCore.Utilities.UtilityEntities.OpaqueTokenEntity;
+import com.jcmlabs.AccessCore.Utilities.UtilityRepositories.OpaqueTokenRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AuthorizationTokenService {
+    private final OpaqueTokenRepository repository;
+    private final AuthorizationTokenCryptoService crypto;
+    private final AuthorizationTokenConfigurationProperties properties;
+
+    public AuthTokenResponse issueTokens(
+            String username,
+            String userIp,
+            Set<String> scopes
+    ) {
+        OpaqueTokenEntity access  = create(username, userIp, TokenType.ACCESS, scopes);
+        OpaqueTokenEntity refresh = create(username, userIp, TokenType.REFRESH, null);
+
+        return new AuthTokenResponse(
+                crypto.sign(access.getTokenValue(), TokenType.ACCESS),
+                crypto.sign(refresh.getTokenValue(), TokenType.REFRESH),
+                "Bearer",
+                seconds(access),
+                seconds(refresh),
+                Instant.now(),
+                scopes
+        );
+    }
+
+    public Optional<AuthTokenResponse> refresh(String signedRefreshToken) {
+        return validate(signedRefreshToken, TokenType.REFRESH).map(old -> {
+            old.setActive(false);
+            repository.save(old);
+            return issueTokens(old.getUsername(), old.getUserIp(), Set.of());
+        });
+    }
+
+    public Optional<OpaqueTokenEntity> validate(String signedToken, TokenType type) {
+        return crypto.verify(signedToken, type)
+                .flatMap(repository::findFirstByTokenValueAndActiveTrue)
+                .filter(t -> t.getTokenType() == type)
+                .filter(t -> t.getExpiresAt().isAfter(Instant.now()));
+    }
+
+    private OpaqueTokenEntity create(
+            String username,
+            String ip,
+            TokenType type,
+            Set<String> scopes
+    ) {
+        if (type.isRefresh()) {
+            repository.findFirstByUsernameAndTokenTypeAndActiveTrue(username, TokenType.REFRESH)
+                    .ifPresent(t -> { t.setActive(false); repository.save(t); });
+        }
+
+        Instant now = Instant.now();
+        Instant expires = now.plus(properties.getLifespan().resolve(type));
+
+        return repository.save(new OpaqueTokenEntity(
+                UUID.randomUUID().toString(),
+                username,
+                ip,
+                type,
+                scopes == null ? null : String.join(" ", scopes),
+                now,
+                expires,
+                true
+        ));
+    }
+
+    private long seconds(OpaqueTokenEntity t) {
+        return t.getExpiresAt().getEpochSecond() - t.getIssuedAt().getEpochSecond();
+    }
+}
