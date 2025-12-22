@@ -48,6 +48,14 @@ public class AuthorizationTokenService {
         });
     }
 
+    public Optional<AuthTokenResponse> refresh(String signedRefreshToken, String clientIp) {
+        return validate(signedRefreshToken, TokenType.REFRESH).filter(t -> t.getUserIp().equals(clientIp)).map(old -> {
+                    old.setActive(false); 
+                    repository.save(old);
+                    return issueTokens(old.getUsername(),clientIp,parseScopes(old.getScopes()));});
+    }
+
+
     public Optional<OpaqueTokenEntity> validate(String signedToken, TokenType type) {
         return crypto.verify(signedToken, type)
                 .flatMap(repository::findFirstByTokenValueAndActiveTrue)
@@ -84,4 +92,9 @@ public class AuthorizationTokenService {
     private long seconds(OpaqueTokenEntity t) {
         return t.getExpiresAt().getEpochSecond() - t.getIssuedAt().getEpochSecond();
     }
+
+    private Set<String> parseScopes(String scopes) {
+        return scopes == null || scopes.isBlank()? Set.of(): Set.of(scopes.split(" "));
+    }
+
 }
