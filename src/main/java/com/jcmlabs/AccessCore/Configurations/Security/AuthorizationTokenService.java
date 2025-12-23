@@ -89,6 +89,18 @@ public class AuthorizationTokenService {
         ));
     }
 
+    public void revokeToken(String signedToken, String clientIP){
+        validate(signedToken, TokenType.ACCESS).filter(t -> t.getUserIp().equals(clientIP)).ifPresent(access ->{
+            access.setActive(false);
+            repository.save(access);
+
+            repository.findFirstByUsernameAndTokenTypeAndActiveTrue(access.getUsername(), TokenType.REFRESH).ifPresent(refresh -> {
+                refresh.setActive(false);
+                repository.save(refresh);
+            });
+        });
+    }
+
     private long seconds(OpaqueTokenEntity t) {
         return t.getExpiresAt().getEpochSecond() - t.getIssuedAt().getEpochSecond();
     }
