@@ -36,6 +36,14 @@ public class AuthorizationServiceHelper {
                 .orElseThrow(() -> new BadCredentialsException("Invalid or expired refresh token"));
     }
 
+    public void revokeToken(String authorizationHeader, String clientIP){
+        if(authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new BadCredentialsException("Missing access token");
+        }
+        String signedAccessToken = authorizationHeader.substring(7);
+        authTokenService.revokeToken(signedAccessToken, clientIP);
+    }
+
     private Authentication authenticate(String username, String password) {
         return authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(username, password)
