@@ -101,6 +101,11 @@ public class AuthorizationTokenService {
         });
     }
 
+    public boolean resetPassword(String signedResetToken, String newPassword) {
+
+        return false;
+    }
+
     private long seconds(OpaqueTokenEntity t) {
         return t.getExpiresAt().getEpochSecond() - t.getIssuedAt().getEpochSecond();
     }
