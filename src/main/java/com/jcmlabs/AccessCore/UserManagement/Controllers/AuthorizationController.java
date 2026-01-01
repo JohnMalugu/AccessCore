@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.UserManagement.Controllers;
 
 
+import com.jcmlabs.AccessCore.UserManagement.Payload.PasswordUpdateRequestInput;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +48,12 @@ public class AuthorizationController {
         return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS,"Logged out successfully"));
     }
 
+    @PostMapping(value = "/forgot-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BaseResponse<Void>> forgotPassword(@RequestBody PasswordUpdateRequestInput request, HttpServletRequest httpRequest){
+        String clientIP = RequestClientIpUtility.getClientIpAddress(httpRequest);
+        authorizationServiceHelper.forgotPassword(request.password(),clientIP);
+
+        return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"If an account exists, a password reset link has been sent"));
+    }
 
 }

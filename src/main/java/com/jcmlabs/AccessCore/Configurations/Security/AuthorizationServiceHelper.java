@@ -44,6 +44,10 @@ public class AuthorizationServiceHelper {
         authTokenService.revokeToken(signedAccessToken, clientIP);
     }
 
+    public void forgotPassword(String password,String clientIP){
+
+    }
+
     private Authentication authenticate(String username, String password) {
         return authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(username, password)

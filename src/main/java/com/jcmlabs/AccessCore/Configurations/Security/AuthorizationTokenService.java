@@ -40,14 +40,6 @@ public class AuthorizationTokenService {
         );
     }
 
-    public Optional<AuthTokenResponse> refresh(String signedRefreshToken) {
-        return validate(signedRefreshToken, TokenType.REFRESH).map(old -> {
-            old.setActive(false);
-            repository.save(old);
-            return issueTokens(old.getUsername(), old.getUserIp(), Set.of());
-        });
-    }
-
     public Optional<AuthTokenResponse> refresh(String signedRefreshToken, String clientIp) {
         return validate(signedRefreshToken, TokenType.REFRESH).filter(t -> t.getUserIp().equals(clientIp)).map(old -> {
                     old.setActive(false); 
