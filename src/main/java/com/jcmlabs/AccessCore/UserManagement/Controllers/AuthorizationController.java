@@ -52,8 +52,14 @@ public class AuthorizationController {
     public ResponseEntity<BaseResponse<Void>> forgotPassword(@RequestBody PasswordUpdateRequestInput request, HttpServletRequest httpRequest){
         String clientIP = RequestClientIpUtility.getClientIpAddress(httpRequest);
         authorizationServiceHelper.forgotPassword(request.password(),clientIP);
-
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"If an account exists, a password reset link has been sent"));
+    }
+
+    @PostMapping(value = "/reset-password",consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BaseResponse<Void>> resetPassword(@RequestBody PasswordUpdateRequestInput requestInput, HttpServletRequest httpServletRequest){
+        String clientIP = RequestClientIpUtility.getClientIpAddress(httpServletRequest);
+        authorizationServiceHelper.resetPassword(requestInput.username(),requestInput.password(),clientIP);
+        return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,clientIP));
     }
 
 }

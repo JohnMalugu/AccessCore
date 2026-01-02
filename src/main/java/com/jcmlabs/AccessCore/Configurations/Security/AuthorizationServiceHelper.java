@@ -48,6 +48,10 @@ public class AuthorizationServiceHelper {
 
     }
 
+    public void resetPassword(String token, String password, String clientIP){
+
+    }
+
     private Authentication authenticate(String username, String password) {
         return authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(username, password)
