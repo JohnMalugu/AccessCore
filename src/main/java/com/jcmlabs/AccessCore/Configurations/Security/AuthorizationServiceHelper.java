@@ -44,7 +44,7 @@ public class AuthorizationServiceHelper {
         authTokenService.revokeToken(signedAccessToken, clientIP);
     }
 
-    public void forgotPassword(String password,String clientIP){
+    public void forgotPassword(String clientIP){
 
     }
 
