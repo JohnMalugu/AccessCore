@@ -1,10 +1,14 @@
 package com.jcmlabs.AccessCore.Configurations.Security;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.jcmlabs.AccessCore.Configurations.Security.Events.AuthEvent;
+import com.jcmlabs.AccessCore.Configurations.Security.Events.TokenEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
@@ -14,20 +18,33 @@ import com.jcmlabs.AccessCore.Utilities.UtilityRepositories.OpaqueTokenRepositor
 
 import lombok.RequiredArgsConstructor;
 
+
 @Service
 @RequiredArgsConstructor
 public class AuthorizationTokenService {
     private final OpaqueTokenRepository repository;
     private final AuthorizationTokenCryptoService crypto;
     private final AuthorizationTokenConfigurationProperties properties;
+    private final StringRedisTemplate redisTemplate;
+    private final TokenEventPublisher eventPublisher;
 
     public AuthTokenResponse issueTokens(
             String username,
-            String userIp,
+            String clientIP,
             Set<String> scopes
     ) {
-        OpaqueTokenEntity access  = create(username, userIp, TokenType.ACCESS, scopes);
-        OpaqueTokenEntity refresh = create(username, userIp, TokenType.REFRESH, null);
+        OpaqueTokenEntity access  = create(username, clientIP, TokenType.ACCESS, scopes);
+        OpaqueTokenEntity refresh = create(username, clientIP, TokenType.REFRESH, null);
+
+        cache(access);
+        cache(refresh);
+        eventPublisher.publish(new AuthEvent(
+                "LOGIN",
+                username,
+                "ACCESS",
+                clientIP,
+                Instant.now()
+        ));
 
         return new AuthTokenResponse(
                 crypto.sign(access.getTokenValue(), TokenType.ACCESS),
@@ -98,6 +115,11 @@ public class AuthorizationTokenService {
         return false;
     }
 
+    /*
+    HELPER METHODS
+
+    * */
+
     private long seconds(OpaqueTokenEntity t) {
         return t.getExpiresAt().getEpochSecond() - t.getIssuedAt().getEpochSecond();
     }
@@ -105,5 +127,16 @@ public class AuthorizationTokenService {
     private Set<String> parseScopes(String scopes) {
         return scopes == null || scopes.isBlank()? Set.of(): Set.of(scopes.split(" "));
     }
+
+    private void cache(OpaqueTokenEntity token) {
+        String key = token.getTokenType().name().toLowerCase() + ":" + token.getTokenValue();
+
+        redisTemplate.opsForValue().set(
+                key,
+                "ACTIVE",
+                Duration.between(Instant.now(), token.getExpiresAt())
+        );
+    }
+
 
 }
