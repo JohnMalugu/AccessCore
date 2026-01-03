@@ -1,9 +1,11 @@
 package com.jcmlabs.AccessCore.Configurations.Security.Events;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TokenEventPublisher {
@@ -13,6 +15,10 @@ public class TokenEventPublisher {
     private static final String TOPIC = "auth-events";
 
     public void publish(AuthEvent event) {
-        kafkaTemplate.send(TOPIC, event.username(), event);
+        try {
+            kafkaTemplate.send(TOPIC, event.username(), event);
+        } catch (Exception e) {
+            log.warn("Kafka publish failed for event {}: {}", event.eventType(), e.getMessage());
+        }
     }
 }
