@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import com.jcmlabs.AccessCore.Configurations.Security.Events.AuthEvent;
 import com.jcmlabs.AccessCore.Configurations.Security.Events.TokenEventPublisher;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
