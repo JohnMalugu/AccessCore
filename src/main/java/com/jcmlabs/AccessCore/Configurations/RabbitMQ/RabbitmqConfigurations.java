@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-public class RabbitMQConfigurations {
+public class RabbitmqConfigurations {
     
     @Value("${spring.rabbitmq.template.default-receive-queue}")
     private String amqpQueue;
