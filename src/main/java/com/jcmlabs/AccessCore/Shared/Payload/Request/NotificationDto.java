@@ -1,4 +1,3 @@
 package com.jcmlabs.AccessCore.Shared.Payload.Request;
 
-public class SmsInput {
-}
+public record NotificationDto() {}
