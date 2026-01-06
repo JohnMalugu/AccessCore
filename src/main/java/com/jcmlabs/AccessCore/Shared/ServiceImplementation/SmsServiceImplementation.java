@@ -2,7 +2,7 @@ package com.jcmlabs.AccessCore.Shared.ServiceImplementation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.SmsDto;
-import com.jcmlabs.AccessCore.Shared.Payload.Request.SmsProperties;
+import com.jcmlabs.AccessCore.Shared.Payload.ConfigurationProperties.SmsConfigurationProperties;
 import com.jcmlabs.AccessCore.Shared.Service.SmsService;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
@@ -29,7 +29,7 @@ import java.util.UUID;
 public class SmsServiceImplementation implements SmsService {
 
     private final RestClient smsRestClient;
-    private final SmsProperties props;
+    private final SmsConfigurationProperties props;
     private final ObjectMapper objectMapper;
 
     @Override
