@@ -4,6 +4,7 @@ public class ResponseCode {
     public static final int SUCCESS = 2000;
     public static final int FAILURE = 5000;
     public static final int NOT_FOUND = 4004;
+    public static final int NO_RECORD_FOUND = 4004;
     public static final int INVALID_ARGUMENT = 4001;
     public static final int UNAUTHORIZED = 4003;
     public static final int DUPLICATE = 4009;
