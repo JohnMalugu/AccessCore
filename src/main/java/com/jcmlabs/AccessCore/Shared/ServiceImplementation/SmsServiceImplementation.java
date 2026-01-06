@@ -1,5 +1,6 @@
 package com.jcmlabs.AccessCore.Shared.ServiceImplementation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.SmsDto;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.SmsProperties;
 import com.jcmlabs.AccessCore.Shared.Service.SmsService;
@@ -11,12 +12,12 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import tools.jackson.databind.ObjectMapper;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Map;
@@ -26,47 +27,50 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SmsServiceImplementation implements SmsService {
-    private final SmsProperties props;
-    private final RestClient restClient = RestClient.create(); // In production, inject a Bean
-    private final ObjectMapper mapper;
 
+    private final RestClient smsRestClient;
+    private final SmsProperties props;
+    private final ObjectMapper objectMapper;
 
     @Override
     public BaseResponse<Void> sendSms(SmsDto dto) {
-        try{
+        log.info("📩 [SMS] Preparing to send SMS to {}", dto.receiver());
+
+        try {
             String messageId = UUID.randomUUID().toString();
-            Map<String, Object> body = Map.of(
+            Instant now = Instant.now();
+
+            Map<String, Object> payloadMap = Map.of(
                     "recipients", dto.receiver(),
                     "message", dto.message(),
-                    "datetime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    "datetime",
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault()).format(now),
                     "mobileServiceId", props.mobileServiceId(),
-                    "senderId", props.senderId(),
-                    "messageId", messageId
+                    "senderId",
+                    props.senderId(),
+                    "messageId",
+                    messageId
             );
 
-            String payload = mapper.writeValueAsString(body);
+            // 3️⃣ Serialize using ObjectMapper (NOW USED ✔)
+            String payload = objectMapper.writeValueAsString(payloadMap);
+
+            // 4️⃣ Generate HMAC hash
             String hash = generateHash(props.apiKey(), payload);
 
-            restClient.post()
-                    .uri(props.messageUrl())
-                    .header("hash", hash)
-                    .header("sysId", props.systemId())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(payload)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError, (req, res) -> {
-                        throw new RuntimeException("External API Error: " + res.getStatusCode());
-                    })
-                    .toBodilessEntity();
-            return new BaseResponse<>(false, ResponseCode.SUCCESS,"SMS queued successfully with ID: " + messageId);
+            // 5️⃣ Send HTTP request
+            smsRestClient.post().uri(props.messageUrl()).contentType(MediaType.APPLICATION_JSON).header("hash", hash).header("sysId", props.systemId()).body(payload).retrieve().onStatus(HttpStatusCode::isError, (req, res) -> {
+                throw new RuntimeException("SMS Provider Error: " + res.getStatusCode());
+            }).toBodilessEntity();
+
+            log.info("✅ [SMS] Queued successfully | messageId={}", messageId);
+            return new BaseResponse<>(false, ResponseCode.SUCCESS, "SMS queued successfully with ID: " + messageId);
+
+        } catch (Exception ex) {
+            log.error("❌ [SMS] Sending failed", ex);
+            return new BaseResponse<>(true, ResponseCode.EXCEPTION, "System was unable to process SMS request.");
         }
-        catch (Exception exception){
-            log.error("SMS Failure: ", exception);
-            return new BaseResponse<>(true,ResponseCode.EXCEPTION,"System was unable to process SMS request.");
     }
-    }
-
-
 
     private String generateHash(String key, String data) throws Exception {
         Mac hmac = Mac.getInstance("HmacSHA256");
