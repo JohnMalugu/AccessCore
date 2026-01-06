@@ -1,4 +1,4 @@
-package com.jcmlabs.AccessCore.Shared.Payload.Request;
+package com.jcmlabs.AccessCore.Shared.Payload.ConfigurationProperties;
 
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -36,8 +36,8 @@ import org.springframework.validation.annotation.Validated;
  * </ul>
  */
 @Validated
-@ConfigurationProperties(prefix = "sms.provider")
-public record SmsProperties(
+@ConfigurationProperties(prefix = "mgov.message")
+public record SmsConfigurationProperties(
         @NotBlank String messageUrl,
         @NotBlank String apiKey,
         @NotBlank String mobileServiceId,
