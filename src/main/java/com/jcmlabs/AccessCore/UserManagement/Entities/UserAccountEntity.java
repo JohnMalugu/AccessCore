@@ -57,6 +57,9 @@ public class UserAccountEntity extends BaseEntity{
 	@Column()
 	private Instant passwordChangedAt;
 
+	@Column()
+	private String lastModifiedIp;
+
     @ManyToMany(fetch = FetchType.EAGER)
     private List<RoleEntity> roles;
 

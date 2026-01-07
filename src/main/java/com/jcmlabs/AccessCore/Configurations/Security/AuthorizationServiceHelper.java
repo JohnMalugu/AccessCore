@@ -2,6 +2,7 @@ package com.jcmlabs.AccessCore.Configurations.Security;
 
 import java.util.Set;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,12 +14,15 @@ import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse
 
 import lombok.RequiredArgsConstructor;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorizationServiceHelper {
 
     private final AuthenticationManager authenticationManager;
     private final AuthorizationTokenService authTokenService;
+    private final RedisSecurityService redisSecurity;
+
 
     public AuthTokenResponse login(
             String username,
@@ -44,12 +48,25 @@ public class AuthorizationServiceHelper {
         authTokenService.revokeToken(signedAccessToken, clientIP);
     }
 
-    public void forgotPassword(String clientIP){
+    public void forgotPassword(String username, String clientIp) {
+        try {
+            // Rate limiting check
+            if (!redisSecurity.allowForgotPassword(username, clientIp)) {
+                log.warn("Rate limit exceeded for forgot password: username={}, ip={}", username, clientIp);
+                return; // Silent fail - security best practice
+            }
 
+            authTokenService.issuePasswordResetToken(username, clientIp);
+
+        } catch (Exception e) {
+            // NEVER expose internal errors in forgot password
+            log.error("Forgot password failed silently for username={}, ip={}: {}",
+                    username, clientIp, e.getMessage());
+        }
     }
 
-    public void resetPassword(String token, String password, String clientIP){
-
+    public void resetPassword(String token, String password,String newPassword, String clientIp) {
+            authTokenService.resetPassword(token, password,newPassword, clientIp);
     }
 
     private Authentication authenticate(String username, String password) {

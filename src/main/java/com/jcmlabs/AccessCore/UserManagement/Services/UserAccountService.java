@@ -4,5 +4,5 @@ import com.jcmlabs.AccessCore.UserManagement.Payload.UpdatePasswordRequestDto;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 
 public interface UserAccountService {
-    public BaseResponse<Void> updatePassword(UpdatePasswordRequestDto input);
+    void updatePassword(UpdatePasswordRequestDto input);
 }
