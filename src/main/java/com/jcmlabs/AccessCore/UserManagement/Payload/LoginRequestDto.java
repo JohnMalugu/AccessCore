@@ -6,7 +6,7 @@ import java.util.Set;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record LoginRequestInput(
+public record LoginRequestDto(
 
     @NotBlank(message = "Username is required")
     String username,

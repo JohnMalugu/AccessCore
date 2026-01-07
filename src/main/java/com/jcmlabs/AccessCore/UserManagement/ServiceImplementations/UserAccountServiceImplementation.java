@@ -1,14 +1,21 @@
 package com.jcmlabs.AccessCore.UserManagement.ServiceImplementations;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.jcmlabs.AccessCore.UserManagement.Payload.UpdatePasswordRequestDto;
+import com.jcmlabs.AccessCore.UserManagement.Services.UserAccountService;
+import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.PasswordPolicy;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.UserManagement.Entities.UserAccountEntity;
@@ -16,11 +23,14 @@ import com.jcmlabs.AccessCore.UserManagement.Repositories.UserAccountRepository;
 
 import lombok.RequiredArgsConstructor;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
-public class UserAccountServiceImplementation implements UserDetailsService {
+public class UserAccountServiceImplementation implements UserDetailsService, UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
+    private final PasswordPolicy passwordPolicy;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -42,4 +52,37 @@ public class UserAccountServiceImplementation implements UserDetailsService {
 		}
         return authorities.toArray(new String[0]);
 	}
+
+    @Override
+    public void updatePassword(UpdatePasswordRequestDto input) {
+
+        log.debug("Starting password update process for: {} [IP: {}]", input.username(), input.clientIP());
+
+        if (!input.passwordsMatch()) {
+            log.warn("Password mismatch attempt for user: {}", input.username());
+            throw new IllegalArgumentException("New password and confirmation do not match.");
+        }
+        passwordPolicy.validate(input.password());
+
+        UserAccountEntity user = userAccountRepository.findActiveByUsername(input.username())
+                .orElseThrow(() -> {
+                    log.error("[SECURITY ALERT] Password update targeted non-existent user: {}", input.username());
+                    return new BadCredentialsException("Invalid request parameters.");
+                });
+
+        if (passwordEncoder.matches(input.password(), user.getPassword())) {
+            log.warn("[AUDIT] User {} attempted to reuse current password from IP: {}", input.username(), input.clientIP());
+            throw new IllegalArgumentException("New password cannot be the same as your current password.");
+        }
+        try {
+            user.setPassword(passwordEncoder.encode(input.password()));
+            user.setPasswordChangedAt(Instant.now());
+            user.setLastModifiedIp(input.clientIP());
+            userAccountRepository.save(user);
+            log.info("✅ [SECURITY] Password successfully updated for user: {} | Source IP: {}", input.username(), input.clientIP());
+        } catch (Exception e) {
+            log.error("❌ Failed to persist password change for user: {}", input.username(), e);
+            throw new RuntimeException("An internal error occurred while saving your new password.");
+        }
+    }
 }

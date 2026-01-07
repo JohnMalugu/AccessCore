@@ -1,7 +1,7 @@
 package com.jcmlabs.AccessCore.UserManagement.Controllers;
 
 
-import com.jcmlabs.AccessCore.UserManagement.Payload.PasswordUpdateRequestInput;
+import com.jcmlabs.AccessCore.UserManagement.Payload.UpdatePasswordRequestDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jcmlabs.AccessCore.Configurations.Security.AuthorizationServiceHelper;
-import com.jcmlabs.AccessCore.UserManagement.Payload.LoginRequestInput;
+import com.jcmlabs.AccessCore.UserManagement.Payload.LoginRequestDto;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.RequestClientIpUtility;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
@@ -28,7 +28,7 @@ public class AuthorizationController {
     private final AuthorizationServiceHelper authorizationServiceHelper;
 
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthTokenResponse> login(@RequestBody LoginRequestInput request,HttpServletRequest httpRequest) {
+    public ResponseEntity<AuthTokenResponse> login(@RequestBody LoginRequestDto request, HttpServletRequest httpRequest) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
         AuthTokenResponse tokens = authorizationServiceHelper.login(request.username(), request.password(), clientIp,request.scopes());
         return ResponseEntity.ok(tokens);
@@ -49,16 +49,16 @@ public class AuthorizationController {
     }
 
     @PostMapping(value = "/forgot-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<BaseResponse<Void>> forgotPassword(@RequestBody PasswordUpdateRequestInput request, HttpServletRequest httpRequest){
+    public ResponseEntity<BaseResponse<Void>> forgotPassword(@RequestBody UpdatePasswordRequestDto request, HttpServletRequest httpRequest){
         String clientIP = RequestClientIpUtility.getClientIpAddress(httpRequest);
-        authorizationServiceHelper.forgotPassword(clientIP);
+        authorizationServiceHelper.forgotPassword(request.username(), clientIP);
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"If an account exists, a password reset link has been sent"));
     }
 
     @PostMapping(value = "/reset-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<BaseResponse<Void>> resetPassword(@RequestBody PasswordUpdateRequestInput requestInput, HttpServletRequest httpServletRequest){
+    public ResponseEntity<BaseResponse<Void>> resetPassword(@RequestBody UpdatePasswordRequestDto requestInput, HttpServletRequest httpServletRequest){
         String clientIP = RequestClientIpUtility.getClientIpAddress(httpServletRequest);
-        authorizationServiceHelper.resetPassword(requestInput.username(),requestInput.password(),clientIP);
+        authorizationServiceHelper.resetPassword(requestInput.username(),requestInput.password(),requestInput.confirmPassword(),clientIP);
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,clientIP));
     }
 
