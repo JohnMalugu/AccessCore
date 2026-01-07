@@ -1,5 +1,6 @@
 package com.jcmlabs.AccessCore.Utilities.UtilityRepositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ public interface OpaqueTokenRepository extends JpaRepository<OpaqueTokenEntity, 
     Optional<OpaqueTokenEntity> findFirstByTokenValueAndActiveTrue(String tokenValue);
 
     Optional<OpaqueTokenEntity> findFirstByUsernameAndTokenTypeAndActiveTrue(String username,TokenType tokenType);
+
+    List<OpaqueTokenEntity> findAllByUsernameAndActiveTrue(String username);
 }

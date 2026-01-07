@@ -1,4 +1,4 @@
-package com.jcmlabs.AccessCore.Configurations.Security.Events;
+package com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
