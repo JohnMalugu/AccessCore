@@ -1,5 +1,6 @@
 package com.jcmlabs.AccessCore.UserManagement.Entities;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +41,21 @@ public class UserAccountEntity extends BaseEntity{
 
     @Column(nullable = false)
     private String password;
+
+	@Column()
+	private boolean accountNonExpired = true;
+
+	@Column()
+	private boolean credentialsNonExpired = true;
+
+	@Column()
+	private boolean accountNonLocked = true;
+
+	@Column()
+	private Instant lastLoginAt;
+
+	@Column()
+	private Instant passwordChangedAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
     private List<RoleEntity> roles;
