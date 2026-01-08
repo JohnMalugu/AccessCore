@@ -26,7 +26,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "user_account")
+@Table(name = "user_accounts")
 @SoftDelete
 public class UserAccountEntity extends BaseEntity{
     
