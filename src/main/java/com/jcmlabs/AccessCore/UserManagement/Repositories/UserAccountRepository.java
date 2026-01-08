@@ -15,7 +15,12 @@ public interface UserAccountRepository extends JpaRepository<UserAccountEntity,L
 
     boolean existsByUsername(String username);
 
-    @Query("SELECT u FROM User u WHERE u.username = :username AND u.enabled = true")
+    @Query("""
+        SELECT u
+        FROM UserAccountEntity u
+        WHERE u.username = :username
+          AND u.active = true
+    """)
     Optional<UserAccountEntity> findActiveByUsername(@Param("username") String username);
 
 }
