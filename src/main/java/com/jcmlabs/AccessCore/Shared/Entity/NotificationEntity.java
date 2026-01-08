@@ -18,7 +18,7 @@ import jakarta.persistence.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "notification")
+@Table(name = "notifications")
 @SoftDelete
 public class NotificationEntity extends BaseEntity implements Serializable {
 
