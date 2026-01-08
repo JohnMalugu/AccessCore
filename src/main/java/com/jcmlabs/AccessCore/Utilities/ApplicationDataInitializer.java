@@ -1,5 +1,6 @@
 package com.jcmlabs.AccessCore.Utilities;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,28 +21,37 @@ public class ApplicationDataInitializer implements ApplicationRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public void run(ApplicationArguments args) {
+    public void run(@NonNull ApplicationArguments args) {
+        saveUserIfNotFound(
+                "admin",
+                "@dmin@!23",
+                "System",
+                "Administrator"
+        );
 
-        seedDefaultUser();
+        saveUserIfNotFound(
+                "johnmalugu99@gmail.com",
+                "M@nager123",
+                "John",
+                "Malugu"
+        );
     }
 
-    private void seedDefaultUser() {
-
-        if (userRepository.existsByUsername("admin")) {
-            log.info("Default admin user already exists — skipping");
+    private void saveUserIfNotFound(String username, String rawPassword, String firstName, String lastName) {
+        if (userRepository.existsByUsername(username)) {
+            log.info("User '{}' already exists — skipping", username);
             return;
         }
 
-        log.info("Creating default admin user");
+        log.info("Creating user: {}", username);
 
         UserAccountEntity user = new UserAccountEntity();
-        user.setFirstName("System");
-        user.setLastName("Administrator");
-        user.setUsername("admin");
-        user.setPassword(passwordEncoder.encode("@dmin@!23"));
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(rawPassword));
 
         userRepository.save(user);
-
-        log.info("Default admin user created");
+        log.info("User '{}' created successfully", username);
     }
 }

@@ -11,36 +11,43 @@ import org.hibernate.annotations.SoftDelete;
 
 import java.io.Serializable;
 
+import jakarta.persistence.*;
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name="notification")
-@SoftDelete()
+@Table(name = "notification")
+@SoftDelete
 public class NotificationEntity extends BaseEntity implements Serializable {
-    @Column()
+
+    @Column(length = 150)
     private String subject;
 
-    @Column()
+    @Column(length = 320)
     private String emailTo;
 
-    @Column()
+    @Column(length = 20)
     private String phoneTo;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 120)
     private String fullName;
 
-    @Column(nullable = false)
+    @Lob
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
-    @Column(nullable=false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
     private NotificationStatus status = NotificationStatus.PENDING;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private NotificationType notificationType;
 
-    @Column()
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String remarks;
 }
