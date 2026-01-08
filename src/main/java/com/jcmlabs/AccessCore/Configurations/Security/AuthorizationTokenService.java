@@ -6,12 +6,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.jcmlabs.AccessCore.Configurations.RabbitMQ.RabbitMQProducer;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.AuthEvent;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.TokenEventPublisher;
-import com.jcmlabs.AccessCore.UserManagement.Payload.UpdatePasswordRequestDto;
+import com.jcmlabs.AccessCore.Shared.Entity.NotificationEntity;
+import com.jcmlabs.AccessCore.Shared.Enums.NotificationStatus;
+import com.jcmlabs.AccessCore.Shared.Payload.Request.NotificationDto;
+import com.jcmlabs.AccessCore.UserManagement.Entities.UserAccountEntity;
+import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
+import com.jcmlabs.AccessCore.UserManagement.Repositories.UserAccountRepository;
 import com.jcmlabs.AccessCore.UserManagement.Services.UserAccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
@@ -32,6 +39,7 @@ public class AuthorizationTokenService {
     private final RedisSecurityService redisSecurityService;
     private final TokenEventPublisher eventPublisher;
     private final UserAccountService userAccountService;
+    private final RabbitMQProducer rabbitmqProducer;
 
     public AuthTokenResponse issueTokens(String username, String clientIP, Set<String> scopes) {
         OpaqueTokenEntity access = create(username, clientIP, TokenType.ACCESS, scopes);
@@ -49,48 +57,79 @@ public class AuthorizationTokenService {
     }
 
     public void issuePasswordResetToken(String username, String clientIP) {
+
+        UserAccountEntity user = userAccountService.getActiveUserOrThrow(username);
+
+        // ✅ Invalidate previous reset tokens (important security hardening)
+        repository.findAllByUsernameAndTokenTypeAndActiveTrue(username, TokenType.PASSWORD_RESET)
+                .forEach(t -> {
+                    t.setActive(false);
+                    repository.save(t);
+                    redisSecurityService.invalidateToken(t.getTokenValue(), "RESET");
+                });
+
         OpaqueTokenEntity resetToken = create(username, clientIP, TokenType.PASSWORD_RESET, null);
         cacheToken(resetToken);
+
         String signedToken = crypto.sign(resetToken.getTokenValue(), TokenType.PASSWORD_RESET);
-        eventPublisher.publish(new AuthEvent("PASSWORD_RESET_REQUESTED", username, "RESET", clientIP));
-        // TODO: Send email with signedToken
-        log.info("Password reset token generated for {}: {}", username, signedToken);
+
+        eventPublisher.publish(
+                new AuthEvent("PASSWORD_RESET_REQUESTED", username, "RESET", clientIP)
+        );
+
+        String resetUrl = "https://accesscore/reset-password?token=" + signedToken;
+
+        NotificationDto notification = NotificationDto.builder()
+                .emailTo(username)
+                .fullName(user.getFirstName() + " " + user.getLastName())
+                .message("""
+                A password reset was requested for your account.
+
+                Reset your password using the link below:
+                %s
+
+                If you did not request this, please ignore this message.
+                """.formatted(resetUrl))
+                .status(NotificationStatus.PENDING)
+                .build();
+
+        rabbitmqProducer.sendMessageToRabbitMQ(notification);
+
+        log.info("🔐 Password reset token issued for user={}", username);
     }
+
 
     @Transactional
     public void resetPassword(String signedResetToken, String password, String newPassword, String clientIp) {
-        OpaqueTokenEntity token = validate(signedResetToken, TokenType.PASSWORD_RESET)
-                .filter(t -> t.getUserIp().equals(clientIp))
-                .orElseThrow(() -> new BadCredentialsException("Invalid or expired reset token"));
 
-        // Check if already used (Redis replay protection)
+        OpaqueTokenEntity token = validate(signedResetToken, TokenType.PASSWORD_RESET)
+                .filter(t -> t.getUserIp().equals(clientIp)).orElseThrow(() -> new BadCredentialsException("Invalid or expired reset token"));
+
+        // ✅ Replay protection
         if (!redisSecurityService.markResetTokenUsed(token.getTokenValue())) {
             throw new BadCredentialsException("Reset token already used");
         }
 
-        UpdatePasswordRequestDto passwordRequest = UpdatePasswordRequestDto.builder()
+        UpdatePasswordRequestDto request = UpdatePasswordRequestDto.builder()
                 .username(token.getUsername())
                 .password(password)
                 .confirmPassword(newPassword)
                 .clientIP(clientIp)
                 .build();
 
-        userAccountService.updatePassword(passwordRequest);
+        userAccountService.updatePassword(request);
 
-
-        // THEN: Invalidate token
+        // ✅ Invalidate token
         token.setActive(false);
         repository.save(token);
         redisSecurityService.invalidateToken(token.getTokenValue(), "RESET");
 
-        // Publish event
-        eventPublisher.publish(new AuthEvent(
-                "PASSWORD_RESET_COMPLETED", token.getUsername(), "RESET", clientIp
-        ));
+        eventPublisher.publish(new AuthEvent("PASSWORD_RESET_COMPLETED", token.getUsername(), "RESET", clientIp));
 
-        // FINALLY: Revoke all active sessions
+        // ✅ Force logout everywhere
         revokeAllUserTokens(token.getUsername());
     }
+
 
     private void revokeAllUserTokens(String username) {
         repository.findAllByUsernameAndActiveTrue(username).forEach(token -> {
@@ -143,11 +182,6 @@ public class AuthorizationTokenService {
                 repository.save(refresh);
             });
         });
-    }
-
-    public boolean resetPassword(String signedResetToken, String newPassword) {
-
-        return false;
     }
 
     /*

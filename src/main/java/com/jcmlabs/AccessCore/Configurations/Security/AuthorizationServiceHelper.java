@@ -59,9 +59,8 @@ public class AuthorizationServiceHelper {
             authTokenService.issuePasswordResetToken(username, clientIp);
 
         } catch (Exception e) {
-            // NEVER expose internal errors in forgot password
-            log.error("Forgot password failed silently for username={}, ip={}: {}",
-                    username, clientIp, e.getMessage());
+            // We don't expose internal errors in forgot password
+            log.error("Forgot password failed silently for username={}, ip={}: {}", username, clientIp, e.getMessage());
         }
     }
 

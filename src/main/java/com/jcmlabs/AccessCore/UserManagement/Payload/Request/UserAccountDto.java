@@ -1,4 +1,4 @@
-package com.jcmlabs.AccessCore.UserManagement.Payload;
+package com.jcmlabs.AccessCore.UserManagement.Payload.Request;
 
 import lombok.Getter;
 

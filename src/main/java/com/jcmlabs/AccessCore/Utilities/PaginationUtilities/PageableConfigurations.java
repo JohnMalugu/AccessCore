@@ -5,7 +5,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.jcmlabs.AccessCore.Utilities.BaseFilterInput;
+import com.jcmlabs.AccessCore.Utilities.BaseFilterDto;
 
 @Service
 public class PageableConfigurations {
@@ -37,7 +37,7 @@ public class PageableConfigurations {
 		return pageRequest;
 	}
 
-	public PageRequest newPageable(BaseFilterInput baseFilterDto, String sortKey) {
+	public PageRequest newPageable(BaseFilterDto baseFilterDto, String sortKey) {
 		int pageSize = (baseFilterDto.getItemsPerPage() != null) ? baseFilterDto.getItemsPerPage() : 10;
 		int pageNumber = (baseFilterDto.getPageNumber() != null) ? baseFilterDto.getPageNumber() : 0;
 		String sortBy = (sortKey != null) ? sortKey : "createdAt";

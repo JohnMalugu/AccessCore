@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RabbitmqProducer {
+public class RabbitMQProducer {
 
     private final ObjectMapper objectMapper;
     private final RabbitTemplate rabbitTemplate;

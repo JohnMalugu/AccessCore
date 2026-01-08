@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-public class RabbitmqConfigurations {
+public class RabbitMQConfigurations {
 
     private final RabbitmqConfigurationProperties props;
 
