@@ -20,7 +20,8 @@ public class ApplicationSecurityConfigurations {
                     .requestMatchers(
                         "/auth/**",
                         "/graphiql/**",
-                        "/graphql/**"
+                        "/graphql/**",
+                            "/error"
                     )
                     .permitAll()
                     .anyRequest().authenticated()
