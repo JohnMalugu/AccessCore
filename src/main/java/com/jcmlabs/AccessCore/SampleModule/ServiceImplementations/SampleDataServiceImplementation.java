@@ -10,7 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.SampleModule.Entities.SampleDataEntity;
-import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataFilterInput;
+import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataFilterDto;
 import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataInput;
 import com.jcmlabs.AccessCore.SampleModule.Repositories.SampleDataRepository;
 import com.jcmlabs.AccessCore.SampleModule.Services.SampleDataService;
@@ -45,7 +45,7 @@ public class SampleDataServiceImplementation implements SampleDataService{
     }
 
     @Override
-    public BaseResponse<SampleDataEntity> getAllSampleData(SampleDataFilterInput sampleDataFilterInput) {
+    public BaseResponse<SampleDataEntity> getAllSampleData(SampleDataFilterDto sampleDataFilterInput) {
         try {
             Specification<SampleDataEntity> specification = BaseFilterUtilities.filterByCriteria(sampleDataFilterInput,SampleDataEntity.class);
 

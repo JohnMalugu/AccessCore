@@ -1,7 +1,7 @@
 package com.jcmlabs.AccessCore.UserManagement.Controllers;
 
 
-import com.jcmlabs.AccessCore.UserManagement.Payload.UpdatePasswordRequestDto;
+import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.jcmlabs.AccessCore.Configurations.Security.AuthorizationServiceHelper;
-import com.jcmlabs.AccessCore.UserManagement.Payload.LoginRequestDto;
+import com.jcmlabs.AccessCore.UserManagement.Payload.Request.LoginRequestDto;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.RequestClientIpUtility;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
@@ -58,8 +58,8 @@ public class AuthorizationController {
     @PostMapping(value = "/reset-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BaseResponse<Void>> resetPassword(@RequestBody UpdatePasswordRequestDto requestInput, HttpServletRequest httpServletRequest){
         String clientIP = RequestClientIpUtility.getClientIpAddress(httpServletRequest);
-        authorizationServiceHelper.resetPassword(requestInput.username(),requestInput.password(),requestInput.confirmPassword(),clientIP);
-        return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,clientIP));
+        authorizationServiceHelper.resetPassword(requestInput.token(),requestInput.password(),requestInput.confirmPassword(),clientIP);
+        return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"Password reset successfully"));
     }
 
 }

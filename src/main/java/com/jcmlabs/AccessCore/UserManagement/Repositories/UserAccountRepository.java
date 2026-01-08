@@ -11,8 +11,11 @@ import com.jcmlabs.AccessCore.UserManagement.Entities.UserAccountEntity;
 public interface UserAccountRepository extends JpaRepository<UserAccountEntity,Long> {
     Optional<UserAccountEntity> findFirstByUsername(String username);
 
+    Optional<UserAccountEntity> findByUsername(String username);
+
     boolean existsByUsername(String username);
 
     @Query("SELECT u FROM User u WHERE u.username = :username AND u.enabled = true")
     Optional<UserAccountEntity> findActiveByUsername(@Param("username") String username);
+
 }

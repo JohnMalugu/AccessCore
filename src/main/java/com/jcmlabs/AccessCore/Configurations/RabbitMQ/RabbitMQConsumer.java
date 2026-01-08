@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class RabbitmqConsumer {
+public class RabbitMQConsumer {
 
     private final SmsService smsService;
     private final EmailService emailService;

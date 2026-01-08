@@ -13,7 +13,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 public class BaseFilterUtilities {
-    public static <T, F extends BaseFilterInput> Specification<T> filterByCriteria(F filterInput, Class<T> entityClass) {
+    public static <T, F extends BaseFilterDto> Specification<T> filterByCriteria(F filterInput, Class<T> entityClass) {
         return (Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
             Predicate predicate = cb.conjunction();
 

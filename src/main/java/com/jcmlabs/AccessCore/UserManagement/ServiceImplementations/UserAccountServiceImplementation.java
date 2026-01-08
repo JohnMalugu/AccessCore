@@ -5,10 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.jcmlabs.AccessCore.UserManagement.Payload.UpdatePasswordRequestDto;
+import com.jcmlabs.AccessCore.UserManagement.Payload.Filtering.UserAccountFilters;
+import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
 import com.jcmlabs.AccessCore.UserManagement.Services.UserAccountService;
+import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.PasswordPolicy;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -33,7 +36,7 @@ public class UserAccountServiceImplementation implements UserDetailsService, Use
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
         Optional<UserAccountEntity> optionalUser = userAccountRepository.findFirstByUsername(username);
         if(optionalUser.isPresent()){
             UserAccountEntity user = optionalUser.get();
@@ -85,4 +88,20 @@ public class UserAccountServiceImplementation implements UserDetailsService, Use
             throw new RuntimeException("An internal error occurred while saving your new password.");
         }
     }
+
+    @Override
+    public BaseResponse<UserAccountEntity> getAllUsers(UserAccountFilters filters) {
+        return null;
+    }
+
+    @Override
+    public UserAccountEntity getActiveUserOrThrow(String username) {
+        return userAccountRepository.findActiveByUsername(username).orElseThrow(() -> {
+            log.warn("[SECURITY] Lookup for non-existent or inactive user: {}", username);
+            return new UsernameNotFoundException("User not found");
+        });
+    }
+
+
+
 }

@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BaseFilterInput {
+public class BaseFilterDto {
     private Integer pageNumber;
     private Integer itemsPerPage;
     private String keyword;

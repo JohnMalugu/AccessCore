@@ -5,7 +5,7 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 
 import com.jcmlabs.AccessCore.SampleModule.Entities.SampleDataEntity;
-import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataFilterInput;
+import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataFilterDto;
 import com.jcmlabs.AccessCore.SampleModule.Payload.SampleDataInput;
 import com.jcmlabs.AccessCore.SampleModule.Services.SampleDataService;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
@@ -23,7 +23,7 @@ public class SampleDataController {
     }
 
     @SchemaMapping(typeName = "Query")
-    public BaseResponse<SampleDataEntity> getSampleData(@Argument SampleDataFilterInput filter){
+    public BaseResponse<SampleDataEntity> getSampleData(@Argument SampleDataFilterDto filter){
         return sampleDataService.getAllSampleData(filter);
     }
 }

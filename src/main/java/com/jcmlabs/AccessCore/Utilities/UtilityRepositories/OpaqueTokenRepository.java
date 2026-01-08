@@ -15,4 +15,6 @@ public interface OpaqueTokenRepository extends JpaRepository<OpaqueTokenEntity, 
     Optional<OpaqueTokenEntity> findFirstByUsernameAndTokenTypeAndActiveTrue(String username,TokenType tokenType);
 
     List<OpaqueTokenEntity> findAllByUsernameAndActiveTrue(String username);
+
+    List<OpaqueTokenEntity> findAllByUsernameAndTokenTypeAndActiveTrue(String username, TokenType tokenType);
 }

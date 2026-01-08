@@ -2,7 +2,7 @@ package com.jcmlabs.AccessCore.Shared.ServiceImplementation;
 
 import com.jcmlabs.AccessCore.Shared.Entity.NotificationEntity;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationStatus;
-import com.jcmlabs.AccessCore.Shared.Payload.Filtering.NotificationFilteringInput;
+import com.jcmlabs.AccessCore.Shared.Payload.Filtering.NotificationFilteringDto;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.NotificationDto;
 import com.jcmlabs.AccessCore.Shared.Repository.NotificationRepository;
 import com.jcmlabs.AccessCore.Shared.Service.NotificationService;
@@ -24,7 +24,7 @@ public class NotificationServiceImplementation implements NotificationService {
     private final NotificationRepository notificationRepository;
 
     @Override
-    public BaseResponse<NotificationEntity> filterNotifications(NotificationFilteringInput filtering) {
+    public BaseResponse<NotificationEntity> filterNotifications(NotificationFilteringDto filtering) {
         log.info("🔍 [FILTER] Fetching notifications with criteria: {}", filtering);
         // Implementation here...
         return null;
