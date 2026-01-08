@@ -19,7 +19,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "rabbitmq_message")
+@Table(name = "rabbitmq_messages")
 public class RabbitmqMessage extends BaseEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
