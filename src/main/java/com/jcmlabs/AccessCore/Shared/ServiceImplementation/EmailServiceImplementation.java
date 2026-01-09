@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -20,61 +23,85 @@ public class EmailServiceImplementation implements EmailService {
 
     private final JavaMailSender javaMailSender;
 
-    @Retry(name = "emailRetry")
-    @CircuitBreaker(
-            name = "emailSmtp",
-            fallbackMethod = "fallbackEmail"
-    )
-
     @Value("${spring.mail.properties.mail.smtp.from}")
     private String sender;
+
+    /**
+     * Sends an email using SMTP.
+     *
+     * <p>
+     * This method is wrapped by Spring Retry via {@link Retryable}.
+     * Any exception thrown from this method will trigger a retry
+     * according to the configured retry policy.
+     * </p>
+     *
+     * <p>
+     * IMPORTANT:
+     * This method MUST rethrow the exception when a failure occurs.
+     * Swallowing the exception will disable retry and recovery logic.
+     * </p>
+     */
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000)
+    )
     @Override
     public BaseResponse<Void> sendEmail(EmailDto dto) {
-        log.info("📧 [EmailService] Preparing to send email...");
 
-        try{
-            if (dto.recipient() == null || dto.recipient().isBlank()) {
-                log.error("❌ Recipient email is null or empty");
-                return new BaseResponse<>(true,ResponseCode.REQUIRED_FIELD, "Recipient email is required.");
-            }
+        log.info("📧 Sending email to {}", dto.recipient());
 
-            String safeSender = sender != null ? sender : "";
-            if (safeSender.isEmpty()) {
-                log.warn("⚠️ 'sender' value from properties is null or empty");
-            }
-
-            String safeSubject = dto.subject() != null ? dto.subject() : "(no subject)";
-
-            String safeBody = dto.body() != null ? dto.body() : "";
-
-            String safeRecipient = dto.recipient();
-
-            log.info("📨 Sending email: to={}, subject={}, html={}",
-                    safeRecipient, safeSubject, dto.isHtml());
-
+        try {
             MimeMessage mime = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
 
-            helper.setFrom(safeSender);
-            helper.setTo(safeRecipient);
-            helper.setSubject(safeSubject);
-            helper.setText(safeBody, dto.isHtml());
+            helper.setFrom(sender);
+            helper.setTo(dto.recipient());
+            helper.setSubject(dto.subject());
+            helper.setText(dto.body(), dto.isHtml());
 
-            log.info("📤 Dispatching email...");
             javaMailSender.send(mime);
 
-            log.info("✅ Email sent successfully to {}", safeRecipient);
-            return new BaseResponse<>(false,ResponseCode.SUCCESS,"Email sent successfully");
-        }
-        catch (Exception exception){
-            log.error("❌ Email sending failed: ", exception);
-            return new BaseResponse<>(true,ResponseCode.EXCEPTION,"Email sending failed");
-        }
+            return new BaseResponse<>(false, ResponseCode.SUCCESS, "Email sent");
 
+        } catch (Exception e) {
+            log.error("❌ SMTP failure", e);
+
+            // REQUIRED:
+            // The exception must be rethrown so that Spring Retry can:
+            // 1. Retry the operation
+            // 2. Eventually invoke the @Recover method if retries are exhausted
+            throw new RuntimeException(e);
+        }
     }
 
-    private void fallbackEmail(EmailDto dto, Throwable ex) {
-        log.error("📛 SMTP DOWN → fallback triggered for {}", dto.recipient(), ex);
-        throw new RuntimeException("SMTP unavailable");
+    /**
+     * Recovery method invoked by Spring Retry AFTER all retry attempts fail.
+     *
+     * <p>
+     * ⚠️ This method is NOT called directly anywhere in the codebase.
+     * It is invoked automatically by Spring Retry through AOP.
+     * </p>
+     *
+     * <p>
+     * IDEs may incorrectly mark this method as "unused".
+     * DO NOT DELETE IT.
+     * Removing this method will cause retry exhaustion to rethrow
+     * the original exception instead of returning a graceful response.
+     * </p>
+     *
+     * <p>
+     * When invoked:
+     * <ul>
+     *   <li>SMTP is considered unavailable</li>
+     *   <li>Retries have already been exhausted</li>
+     *   <li>A controlled failure response is returned</li>
+     * </ul>
+     * </p>
+     */
+    @Recover
+    public BaseResponse<Void> recover(RuntimeException ex, EmailDto dto) {
+        log.error("📛 SMTP DOWN after retries for {}", dto.recipient(), ex);
+        return new BaseResponse<>(true, ResponseCode.EXCEPTION, "SMTP unavailable");
     }
 }
