@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jcmlabs.AccessCore.Shared.Enums.EmailType;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationStatus;
+import com.jcmlabs.AccessCore.Shared.Enums.NotificationType;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.EmailDto;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.NotificationDto;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.SmsDto;
@@ -45,6 +46,14 @@ public class RabbitMQConsumer {
 
         try {
             notification = objectMapper.readValue(message, NotificationDto.class);
+
+            if (notification.notificationType() == NotificationType.EMAIL
+                    && notification.emailType() == null) {
+
+                log.error("❌ EMAIL notification missing emailType. UUID={}", notification.uuid());
+                updateDbStatus(notification.uuid(), NotificationStatus.FAILED);
+                throw new AmqpRejectAndDontRequeueException("Invalid EMAIL payload");
+            }
 
             switch (notification.notificationType()) {
                 case EMAIL -> processEmail(notification);
@@ -100,8 +109,14 @@ public class RabbitMQConsumer {
         }
     }
 
-    private String getTemplate(EmailType type) throws IOException {
+    private String getTemplate(EmailType type) {
+
+        if (type == null) {
+            throw new IllegalArgumentException("EmailType must not be null");
+        }
+
         String path = "templates/" + type.name().toLowerCase() + ".html";
+
         return templateCache.computeIfAbsent(path, p -> {
             try {
                 Resource resource = resourceLoader.getResource("classpath:" + p);
@@ -112,6 +127,7 @@ public class RabbitMQConsumer {
             }
         });
     }
+
 
     private String escapeHtml(String input) {
         if (input == null) return "";

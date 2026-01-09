@@ -27,13 +27,13 @@ public class RabbitMQProducer {
     private final NotificationService notificationService;
 
     @Transactional
-    public boolean sendMessageToRabbitMQ(NotificationDto input) {
+    public void sendMessageToRabbitMQ(NotificationDto input) {
         log.info("📤 [RabbitMQ] Processing request for: {}", input.fullName());
 
         BaseResponse<NotificationEntity> createdResponse = notificationService.createNotification(input);
         if (!createdResponse.getResponse().getSuccess() || createdResponse.getData() == null) {
             log.error("❌ [DB] Failed to create notification record.");
-            return false;
+            return;
         }
 
         NotificationEntity entity = createdResponse.getData();
@@ -64,7 +64,6 @@ public class RabbitMQProducer {
         saveMqLog(messageJson, isQueued);
         updateStatus(entity.getUuid(), isQueued ? NotificationStatus.QUEUED : NotificationStatus.FAILED);
 
-        return isQueued;
     }
 
     private void saveMqLog(String jsonPayload, boolean success) {

@@ -20,6 +20,12 @@ public class EmailServiceImplementation implements EmailService {
 
     private final JavaMailSender javaMailSender;
 
+    @Retry(name = "emailRetry")
+    @CircuitBreaker(
+            name = "emailSmtp",
+            fallbackMethod = "fallbackEmail"
+    )
+
     @Value("${spring.mail.properties.mail.smtp.from}")
     private String sender;
     @Override
@@ -65,5 +71,10 @@ public class EmailServiceImplementation implements EmailService {
             return new BaseResponse<>(true,ResponseCode.EXCEPTION,"Email sending failed");
         }
 
+    }
+
+    private void fallbackEmail(EmailDto dto, Throwable ex) {
+        log.error("📛 SMTP DOWN → fallback triggered for {}", dto.recipient(), ex);
+        throw new RuntimeException("SMTP unavailable");
     }
 }
