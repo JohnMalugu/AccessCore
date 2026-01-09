@@ -10,7 +10,9 @@ import com.jcmlabs.AccessCore.Configurations.RabbitMQ.RabbitMQProducer;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.AuthEvent;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.TokenEventPublisher;
 import com.jcmlabs.AccessCore.Shared.Entity.NotificationEntity;
+import com.jcmlabs.AccessCore.Shared.Enums.EmailType;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationStatus;
+import com.jcmlabs.AccessCore.Shared.Enums.NotificationType;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.NotificationDto;
 import com.jcmlabs.AccessCore.UserManagement.Entities.UserAccountEntity;
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
@@ -90,7 +92,9 @@ public class AuthorizationTokenService {
 
                 If you did not request this, please ignore this message.
                 """.formatted(resetUrl))
+                .notificationType(NotificationType.EMAIL)
                 .status(NotificationStatus.PENDING)
+                .emailType(EmailType.RESET_PASSWORD)
                 .build();
 
         rabbitmqProducer.sendMessageToRabbitMQ(notification);
