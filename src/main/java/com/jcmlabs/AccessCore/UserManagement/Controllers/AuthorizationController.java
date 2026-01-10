@@ -62,4 +62,9 @@ public class AuthorizationController {
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"Password reset successfully"));
     }
 
+    @PostMapping(value = "/change-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
+    public void changePassword(){
+
+    }
+
 }
