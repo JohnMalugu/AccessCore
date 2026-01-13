@@ -102,6 +102,15 @@ public class UserAccountServiceImplementation implements UserDetailsService, Use
         });
     }
 
+    public void verifyPassword(String username, String rawPassword) {
+        UserAccountEntity user = getActiveUserOrThrow(username);
+
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new BadCredentialsException("Invalid current password");
+        }
+    }
+
+
 
 
 }

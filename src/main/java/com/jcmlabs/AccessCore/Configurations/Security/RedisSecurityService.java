@@ -51,4 +51,16 @@ public class RedisSecurityService {
         String key = "auth:token:" + tokenType.toLowerCase() + ":" + tokenId;
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }
+
+    public boolean allowChangePassword(String username, String ip) {
+        String key = "auth:rate:change:" + username + ":" + ip;
+        Long count = redisTemplate.opsForValue().increment(key);
+
+        if (count == 1) {
+            redisTemplate.expire(key, Duration.ofMinutes(10));
+        }
+
+        return count <= 3;
+    }
+
 }
