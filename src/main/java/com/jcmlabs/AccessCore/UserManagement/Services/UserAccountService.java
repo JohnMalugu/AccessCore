@@ -9,4 +9,5 @@ public interface UserAccountService {
     void updatePassword(UpdatePasswordRequestDto input);
     BaseResponse<UserAccountEntity> getAllUsers(UserAccountFilters filters);
     UserAccountEntity getActiveUserOrThrow(String username);
+    public void verifyPassword(String username, String rawPassword);
 }

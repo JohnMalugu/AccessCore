@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.UserManagement.Controllers;
 
 
+import com.jcmlabs.AccessCore.UserManagement.Payload.Request.ChangePasswordRequest;
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,9 +63,14 @@ public class AuthorizationController {
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"Password reset successfully"));
     }
 
-    @PostMapping(value = "/change-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
-    public void changePassword(){
+    @PostMapping(value = "/change-password", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BaseResponse<Void>> changePassword(@RequestHeader("Authorization") String authorizationHeader, @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
+        String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
 
+        authorizationServiceHelper.changePassword(authorizationHeader, request.currentPassword(), request.newPassword(), request.confirmPassword(), clientIp);
+
+        return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Password changed successfully"));
     }
+
 
 }

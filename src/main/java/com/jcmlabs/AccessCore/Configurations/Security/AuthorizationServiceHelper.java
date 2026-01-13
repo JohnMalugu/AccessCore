@@ -64,6 +64,20 @@ public class AuthorizationServiceHelper {
         }
     }
 
+    public void changePassword(String authorizationHeader, String currentPassword, String newPassword, String confirmPassword, String clientIp) {
+        // 1️⃣ Validate presence of token
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new BadCredentialsException("Missing access token");
+        }
+
+        String signedAccessToken = authorizationHeader.substring(7);
+
+        // 2️⃣ Delegate EVERYTHING else to token service
+        authTokenService.changePassword(signedAccessToken, currentPassword, newPassword, confirmPassword, clientIp);
+    }
+
+
+
     public void resetPassword(String token, String password,String newPassword, String clientIp) {
             authTokenService.resetPassword(token, password,newPassword, clientIp);
     }

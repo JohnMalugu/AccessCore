@@ -188,6 +188,32 @@ public class AuthorizationTokenService {
         });
     }
 
+    @Transactional
+    public void changePassword(String signedAccessToken, String currentPassword, String newPassword, String confirmPassword, String clientIp) {
+        OpaqueTokenEntity accessToken = validate(signedAccessToken, TokenType.ACCESS).filter(t -> t.getUserIp().equals(clientIp)).orElseThrow(() -> new BadCredentialsException("Invalid or expired access token"));
+
+        // 🔐 Redis rate limit (NOW safe)
+        if (!redisSecurityService.allowChangePassword(accessToken.getUsername(), clientIp)) {
+            log.warn("Change password rate limited for user={}, ip={}", accessToken.getUsername(), clientIp);
+            throw new BadCredentialsException("Too many attempts");
+        }
+
+        // 🔐 Verify current password
+        userAccountService.verifyPassword(accessToken.getUsername(), currentPassword);
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
+        userAccountService.updatePassword(UpdatePasswordRequestDto.builder().username(accessToken.getUsername()).password(currentPassword).confirmPassword(newPassword).clientIP(clientIp).build());
+
+        revokeAllUserTokens(accessToken.getUsername());
+
+        eventPublisher.publish(new AuthEvent("PASSWORD_CHANGED", accessToken.getUsername(), "ACCESS", clientIp, Instant.now()));
+    }
+
+
+
     /*
     HELPER METHODS
 
