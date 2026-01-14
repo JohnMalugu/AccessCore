@@ -46,9 +46,7 @@ public class AuthorizationController {
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> logout(Authentication authentication, HttpServletRequest request) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(request);
-
         authorizationServiceHelper.revokeToken(authentication.getName(), clientIp);
-
         return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Logged out successfully"));
     }
 
@@ -66,13 +64,10 @@ public class AuthorizationController {
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"Password reset successfully"));
     }
 
-
     @PostMapping("/change-password")
     public ResponseEntity<BaseResponse<Void>> changePassword(Authentication authentication, @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
-
         authorizationServiceHelper.changePassword(authentication.getName(), request.currentPassword(), request.newPassword(), request.confirmPassword(), clientIp);
-
         return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Password changed successfully"));
     }
 
