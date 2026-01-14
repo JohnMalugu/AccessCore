@@ -5,6 +5,7 @@ import com.jcmlabs.AccessCore.UserManagement.Payload.Request.ChangePasswordReque
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -42,11 +43,13 @@ public class AuthorizationController {
         return ResponseEntity.ok(tokens);
     }
 
-    @PostMapping(value = "/logout",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<BaseResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader,HttpServletRequest request) {
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<Void>> logout(Authentication authentication, HttpServletRequest request) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(request);
-        authorizationServiceHelper.revokeToken(authorizationHeader, clientIp);
-        return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS,"Logged out successfully"));
+
+        authorizationServiceHelper.revokeToken(authentication.getName(), clientIp);
+
+        return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Logged out successfully"));
     }
 
     @PostMapping(value = "/forgot-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,14 +66,16 @@ public class AuthorizationController {
         return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"Password reset successfully"));
     }
 
-    @PostMapping(value = "/change-password", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<BaseResponse<Void>> changePassword(@RequestHeader("Authorization") String authorizationHeader, @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
+
+    @PostMapping("/change-password")
+    public ResponseEntity<BaseResponse<Void>> changePassword(Authentication authentication, @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
 
-        authorizationServiceHelper.changePassword(authorizationHeader, request.currentPassword(), request.newPassword(), request.confirmPassword(), clientIp);
+        authorizationServiceHelper.changePassword(authentication.getName(), request.currentPassword(), request.newPassword(), request.confirmPassword(), clientIp);
 
         return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Password changed successfully"));
     }
+
 
 
 }
