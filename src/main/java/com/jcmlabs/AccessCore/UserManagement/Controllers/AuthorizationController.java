@@ -23,6 +23,8 @@ import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.RefreshTokenReque
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+import static com.jcmlabs.AccessCore.Utilities.ResponseCode.SUCCESS;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -47,28 +49,28 @@ public class AuthorizationController {
     public ResponseEntity<BaseResponse<Void>> logout(Authentication authentication, HttpServletRequest request) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(request);
         authorizationServiceHelper.revokeToken(authentication.getName(), clientIp);
-        return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Logged out successfully"));
+        return ResponseEntity.ok(new BaseResponse<>(true, SUCCESS, "Logged out successfully"));
     }
 
     @PostMapping(value = "/forgot-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BaseResponse<Void>> forgotPassword(@RequestBody UpdatePasswordRequestDto request, HttpServletRequest httpRequest){
         String clientIP = RequestClientIpUtility.getClientIpAddress(httpRequest);
         authorizationServiceHelper.forgotPassword(request.username(), clientIP);
-        return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"If an account exists, a password reset link has been sent"));
+        return ResponseEntity.ok(new BaseResponse<>(true, SUCCESS,"If an account exists, a password reset link has been sent"));
     }
 
     @PostMapping(value = "/reset-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BaseResponse<Void>> resetPassword(@RequestBody UpdatePasswordRequestDto requestInput, HttpServletRequest httpServletRequest){
         String clientIP = RequestClientIpUtility.getClientIpAddress(httpServletRequest);
         authorizationServiceHelper.resetPassword(requestInput.token(),requestInput.password(),requestInput.confirmPassword(),clientIP);
-        return ResponseEntity.ok(new BaseResponse<>(true,ResponseCode.SUCCESS,"Password reset successfully"));
+        return ResponseEntity.ok(new BaseResponse<>(true, SUCCESS,"Password reset successfully"));
     }
 
     @PostMapping("/change-password")
     public ResponseEntity<BaseResponse<Void>> changePassword(Authentication authentication, @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
         authorizationServiceHelper.changePassword(authentication.getName(), request.currentPassword(), request.newPassword(), request.confirmPassword(), clientIp);
-        return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Password changed successfully"));
+        return ResponseEntity.ok(new BaseResponse<>(true, SUCCESS, "Password changed"));
     }
 
 }
