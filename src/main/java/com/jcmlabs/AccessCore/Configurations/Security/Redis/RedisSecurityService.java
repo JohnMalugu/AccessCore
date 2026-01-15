@@ -70,9 +70,13 @@ public class RedisSecurityService {
 
     /* ================= ACCESS SESSION ================= */
 
-    public void storeAccessSession(RedisAccessSession session, long ttlSeconds) {
-        accessSessionRedis.opsForValue().set("access:" + session.getTokenId(), session, ttlSeconds, TimeUnit.SECONDS);
+    public void storeSession(RedisAccessSession session, long ttlSeconds) {
+        String key = (session.getTokenType() == TokenType.REFRESH ? "refresh:" : "access:")
+                + session.getTokenId();
+
+        accessSessionRedis.opsForValue().set(key, session, ttlSeconds, TimeUnit.SECONDS);
     }
+
 
     public RedisAccessSession getAccessSession(String tokenId) {
         return accessSessionRedis.opsForValue().get("access:" + tokenId);
