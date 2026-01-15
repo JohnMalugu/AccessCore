@@ -110,7 +110,10 @@ public class UserAccountServiceImplementation implements UserDetailsService, Use
         }
     }
 
-
-
+    public Instant getPasswordChangedAt(String username) {
+        return userAccountRepository.findByUsername(username)
+                .map(UserAccountEntity::getPasswordChangedAt)
+                .orElse(Instant.EPOCH);
+    }
 
 }
