@@ -157,7 +157,7 @@ public class AuthorizationTokenService {
                 token.getTokenType()
         );
 
-        redisSecurityService.storeAccessSession(session, ttl);
+        redisSecurityService.storeSession(session, ttl);
         redisSecurityService.addUserSession(token.getUsername(), token.getTokenValue(), ttl);
 
     }
