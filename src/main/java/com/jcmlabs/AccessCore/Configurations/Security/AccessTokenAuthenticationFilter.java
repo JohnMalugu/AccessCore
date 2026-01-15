@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.Configurations.Security;
 
-import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.TokenType;
+import com.jcmlabs.AccessCore.Configurations.Security.Redis.RedisSecurityService;
+import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
 import com.jcmlabs.AccessCore.Utilities.RequestClientIpUtility;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
 
-    private final AuthorizationTokenService tokenService;
+    private final RedisSecurityService redisSecurityService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -33,15 +34,27 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String signedToken = header.substring(7);
+        String tokenId = header.substring(7);
         String clientIp = RequestClientIpUtility.getClientIpAddress(request);
 
-        tokenService.validate(signedToken, TokenType.ACCESS).filter(t -> t.getUserIp().equals(clientIp)).ifPresent(token -> {
-            Authentication auth = new UsernamePasswordAuthenticationToken(token.getUsername(), null, List.of());
-            SecurityContextHolder.getContext().setAuthentication(auth);
-        });
+        RedisAccessSession session = redisSecurityService.getAccessSession(tokenId);
+
+        if (session == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (!session.getIp().equals(clientIp)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(session.getUsername(), null, List.of());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         filterChain.doFilter(request, response);
     }
+
 }
 

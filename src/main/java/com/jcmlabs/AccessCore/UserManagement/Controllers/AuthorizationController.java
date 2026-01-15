@@ -71,6 +71,4 @@ public class AuthorizationController {
         return ResponseEntity.ok(new BaseResponse<>(true, ResponseCode.SUCCESS, "Password changed successfully"));
     }
 
-
-
 }

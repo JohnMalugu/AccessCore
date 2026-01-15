@@ -9,18 +9,17 @@ import java.util.UUID;
 import com.jcmlabs.AccessCore.Configurations.RabbitMQ.RabbitMQProducer;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.AuthEvent;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.TokenEventPublisher;
-import com.jcmlabs.AccessCore.Shared.Entity.NotificationEntity;
+import com.jcmlabs.AccessCore.Configurations.Security.Redis.RedisSecurityService;
+import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
 import com.jcmlabs.AccessCore.Shared.Enums.EmailType;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationStatus;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationType;
 import com.jcmlabs.AccessCore.Shared.Payload.Request.NotificationDto;
 import com.jcmlabs.AccessCore.UserManagement.Entities.UserAccountEntity;
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
-import com.jcmlabs.AccessCore.UserManagement.Repositories.UserAccountRepository;
 import com.jcmlabs.AccessCore.UserManagement.Services.UserAccountService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
@@ -136,16 +135,51 @@ public class AuthorizationTokenService {
 
 
     private void revokeAllUserTokens(String username) {
+
+        Set<String> tokenIds = redisSecurityService.getUserSessions(username);
+        for (String tokenId : tokenIds) {
+            redisSecurityService.invalidateAccessSession(tokenId);
+        }
+        redisSecurityService.clearUserSessions(username);
         repository.findAllByUsernameAndActiveTrue(username).forEach(token -> {
             token.setActive(false);
             repository.save(token);
-            redisSecurityService.invalidateToken(token.getTokenValue(), token.getTokenType().name());
         });
     }
 
     private void cacheToken(OpaqueTokenEntity token) {
         long ttl = Duration.between(Instant.now(), token.getExpiresAt()).getSeconds();
-        redisSecurityService.cacheToken(token.getTokenValue(), token.getTokenType().name(), ttl);
+
+        RedisAccessSession session = new RedisAccessSession(
+                token.getTokenValue(),
+                token.getUsername(),
+                token.getUserIp(),
+                token.getTokenType()
+        );
+
+        redisSecurityService.storeAccessSession(session, ttl);
+        redisSecurityService.addUserSession(token.getUsername(), token.getTokenValue(), ttl);
+
+    }
+
+
+    public void revokeToken(String signedToken, String clientIP) {
+        validate(signedToken, TokenType.ACCESS)
+                .filter(t -> t.getUserIp().equals(clientIP))
+                .ifPresent(access -> {
+                    access.setActive(false);
+                    repository.save(access);
+
+                    redisSecurityService.invalidateAccessSession(access.getTokenValue());
+
+                    repository.findFirstByUsernameAndTokenTypeAndActiveTrue(
+                            access.getUsername(), TokenType.REFRESH
+                    ).ifPresent(refresh -> {
+                        refresh.setActive(false);
+                        repository.save(refresh);
+                        redisSecurityService.invalidateAccessSession(refresh.getTokenValue());
+                    });
+                });
     }
 
 
@@ -176,17 +210,6 @@ public class AuthorizationTokenService {
         return repository.save(new OpaqueTokenEntity(UUID.randomUUID().toString(), username, ip, type, scopes == null ? null : String.join(" ", scopes), now, expires, true));
     }
 
-    public void revokeToken(String signedToken, String clientIP) {
-        validate(signedToken, TokenType.ACCESS).filter(t -> t.getUserIp().equals(clientIP)).ifPresent(access -> {
-            access.setActive(false);
-            repository.save(access);
-
-            repository.findFirstByUsernameAndTokenTypeAndActiveTrue(access.getUsername(), TokenType.REFRESH).ifPresent(refresh -> {
-                refresh.setActive(false);
-                repository.save(refresh);
-            });
-        });
-    }
 
     @Transactional
     public void changePassword(String signedAccessToken, String currentPassword, String newPassword, String confirmPassword, String clientIp) {
@@ -226,6 +249,7 @@ public class AuthorizationTokenService {
     private Set<String> parseScopes(String scopes) {
         return scopes == null || scopes.isBlank() ? Set.of() : Set.of(scopes.split(" "));
     }
+
 
 
 
