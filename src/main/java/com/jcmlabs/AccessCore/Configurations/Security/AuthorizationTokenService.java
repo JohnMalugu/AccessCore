@@ -210,30 +210,20 @@ public class AuthorizationTokenService {
         return repository.save(new OpaqueTokenEntity(UUID.randomUUID().toString(), username, ip, type, scopes == null ? null : String.join(" ", scopes), now, expires, true));
     }
 
-
     @Transactional
-    public void changePassword(String signedAccessToken, String currentPassword, String newPassword, String confirmPassword, String clientIp) {
-        OpaqueTokenEntity accessToken = validate(signedAccessToken, TokenType.ACCESS).filter(t -> t.getUserIp().equals(clientIp)).orElseThrow(() -> new BadCredentialsException("Invalid or expired access token"));
-
-        // 🔐 Redis rate limit (NOW safe)
-        if (!redisSecurityService.allowChangePassword(accessToken.getUsername(), clientIp)) {
-            log.warn("Change password rate limited for user={}, ip={}", accessToken.getUsername(), clientIp);
+    public void changePassword(String username, String currentPassword, String newPassword, String confirmPassword, String clientIp) {
+        if (!redisSecurityService.allowChangePassword(username, clientIp)) {
             throw new BadCredentialsException("Too many attempts");
         }
-
-        // 🔐 Verify current password
-        userAccountService.verifyPassword(accessToken.getUsername(), currentPassword);
-
+        userAccountService.verifyPassword(username, currentPassword);
         if (!newPassword.equals(confirmPassword)) {
             throw new IllegalArgumentException("Passwords do not match");
         }
-
-        userAccountService.updatePassword(UpdatePasswordRequestDto.builder().username(accessToken.getUsername()).password(currentPassword).confirmPassword(newPassword).clientIP(clientIp).build());
-
-        revokeAllUserTokens(accessToken.getUsername());
-
-        eventPublisher.publish(new AuthEvent("PASSWORD_CHANGED", accessToken.getUsername(), "ACCESS", clientIp, Instant.now()));
+        userAccountService.updatePassword(UpdatePasswordRequestDto.builder().username(username).password(currentPassword).confirmPassword(newPassword).clientIP(clientIp).build());
+        revokeAllUserTokens(username);
+        eventPublisher.publish(new AuthEvent("PASSWORD_CHANGED", username, "ACCESS", clientIp, Instant.now()));
     }
+
 
 
 
