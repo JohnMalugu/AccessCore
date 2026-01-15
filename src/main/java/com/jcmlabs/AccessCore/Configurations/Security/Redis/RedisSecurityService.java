@@ -2,6 +2,7 @@ package com.jcmlabs.AccessCore.Configurations.Security.Redis;
 
 
 import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
+import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.TokenType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -94,4 +95,15 @@ public class RedisSecurityService {
     public void invalidateTokenFlag(String tokenId, String tokenType) {
         stringRedisTemplate.delete("auth:token:" + tokenType.toLowerCase() + ":" + tokenId);
     }
+
+    public boolean hasRefreshSession(String tokenId) {
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey("refresh:" + tokenId));
+    }
+
+    public void invalidateSession(String tokenId, TokenType type) {
+        stringRedisTemplate.delete(
+                (type == TokenType.REFRESH ? "refresh:" : "access:") + tokenId
+        );
+    }
+
 }

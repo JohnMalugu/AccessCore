@@ -167,34 +167,51 @@ public class AuthorizationTokenService {
         validate(signedToken, TokenType.ACCESS)
                 .filter(t -> t.getUserIp().equals(clientIP))
                 .ifPresent(access -> {
-                    access.setActive(false);
-                    repository.save(access);
 
-                    redisSecurityService.invalidateAccessSession(access.getTokenValue());
+                    redisSecurityService.invalidateSession(access.getTokenValue(), TokenType.ACCESS);
 
                     repository.findFirstByUsernameAndTokenTypeAndActiveTrue(
                             access.getUsername(), TokenType.REFRESH
                     ).ifPresent(refresh -> {
                         refresh.setActive(false);
                         repository.save(refresh);
-                        redisSecurityService.invalidateAccessSession(refresh.getTokenValue());
+
+                        redisSecurityService.invalidateSession(refresh.getTokenValue(), TokenType.REFRESH);
                     });
                 });
     }
 
 
     public Optional<AuthTokenResponse> refresh(String signedRefreshToken, String clientIp) {
-        return validate(signedRefreshToken, TokenType.REFRESH).filter(t -> t.getUserIp().equals(clientIp)).map(old -> {
-            old.setActive(false);
-            repository.save(old);
-            return issueTokens(old.getUsername(), clientIp, parseScopes(old.getScopes()));
-        });
+
+        return validate(signedRefreshToken, TokenType.REFRESH)
+                .filter(token -> token.getUserIp().equals(clientIp))
+                .filter(token -> redisSecurityService.hasRefreshSession(token.getTokenValue()))
+                .map(old -> {
+                    old.setActive(false);
+                    repository.save(old);
+
+                    redisSecurityService.invalidateSession(old.getTokenValue(), TokenType.REFRESH);
+
+                    return issueTokens(old.getUsername(), clientIp, parseScopes(old.getScopes()));
+                });
     }
 
 
     public Optional<OpaqueTokenEntity> validate(String signedToken, TokenType type) {
-        return crypto.verify(signedToken, type).flatMap(repository::findFirstByTokenValueAndActiveTrue).filter(t -> t.getTokenType() == type).filter(t -> t.getExpiresAt().isAfter(Instant.now()));
+
+        return crypto.verify(signedToken, type)
+                .flatMap(repository::findFirstByTokenValueAndActiveTrue)
+                .filter(t -> t.getTokenType() == type)
+                .filter(t -> t.getExpiresAt().isAfter(Instant.now()))
+                .filter(t -> {
+                    Instant pwdChanged = userAccountService
+                            .getPasswordChangedAt(t.getUsername());
+
+                    return t.getIssuedAt().isAfter(pwdChanged);
+                });
     }
+
 
     private OpaqueTokenEntity create(String username, String ip, TokenType type, Set<String> scopes) {
         if (type.isRefresh()) {
