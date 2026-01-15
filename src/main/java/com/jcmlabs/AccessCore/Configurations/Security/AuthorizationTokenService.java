@@ -66,7 +66,7 @@ public class AuthorizationTokenService {
                 .forEach(t -> {
                     t.setActive(false);
                     repository.save(t);
-                    redisSecurityService.invalidateToken(t.getTokenValue(), "RESET");
+                    redisSecurityService.invalidateTokenFlag(t.getTokenValue(), "RESET");
                 });
 
         OpaqueTokenEntity resetToken = create(username, clientIP, TokenType.PASSWORD_RESET, null);
@@ -125,7 +125,7 @@ public class AuthorizationTokenService {
         // ✅ Invalidate token
         token.setActive(false);
         repository.save(token);
-        redisSecurityService.invalidateToken(token.getTokenValue(), "RESET");
+        redisSecurityService.invalidateTokenFlag(token.getTokenValue(), "RESET");
 
         eventPublisher.publish(new AuthEvent("PASSWORD_RESET_COMPLETED", token.getUsername(), "RESET", clientIp));
 
