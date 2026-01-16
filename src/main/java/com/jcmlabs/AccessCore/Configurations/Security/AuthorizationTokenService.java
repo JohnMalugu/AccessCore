@@ -242,9 +242,6 @@ public class AuthorizationTokenService {
         eventPublisher.publish(new AuthEvent("PASSWORD_CHANGED", username, "ACCESS", clientIp, Instant.now()));
     }
 
-
-
-
     /*
     HELPER METHODS
 

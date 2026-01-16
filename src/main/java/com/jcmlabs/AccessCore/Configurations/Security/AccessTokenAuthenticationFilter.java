@@ -2,6 +2,7 @@ package com.jcmlabs.AccessCore.Configurations.Security;
 
 import com.jcmlabs.AccessCore.Configurations.Security.Redis.RedisSecurityService;
 import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
+import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.TokenType;
 import com.jcmlabs.AccessCore.Utilities.RequestClientIpUtility;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,6 +24,7 @@ import java.util.List;
 public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final RedisSecurityService redisSecurityService;
+    private final AuthorizationTokenCryptoService crypto;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -34,17 +36,19 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String tokenId = header.substring(7);
+        String signedToken = header.substring(7);
         String clientIp = RequestClientIpUtility.getClientIpAddress(request);
 
-        RedisAccessSession session = redisSecurityService.getAccessSession(tokenId);
-
-        if (session == null) {
+        String tokenId = crypto.verify(signedToken, TokenType.ACCESS).orElse(null);
+        if (tokenId == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (!session.getIp().equals(clientIp)) {
+        RedisAccessSession session = redisSecurityService.getSession(tokenId, TokenType.ACCESS);
+
+        if (session == null || !session.getIp().equals(clientIp)) {
+            SecurityContextHolder.clearContext();
             filterChain.doFilter(request, response);
             return;
         }
@@ -52,9 +56,8 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
         Authentication auth = new UsernamePasswordAuthenticationToken(session.getUsername(), null, List.of());
 
         SecurityContextHolder.getContext().setAuthentication(auth);
-
         filterChain.doFilter(request, response);
     }
-
 }
+
 
