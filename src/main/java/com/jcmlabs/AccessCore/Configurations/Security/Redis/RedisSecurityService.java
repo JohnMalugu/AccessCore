@@ -78,8 +78,9 @@ public class RedisSecurityService {
     }
 
 
-    public RedisAccessSession getAccessSession(String tokenId) {
-        return accessSessionRedis.opsForValue().get("access:" + tokenId);
+    public RedisAccessSession getSession(String tokenId, TokenType type) {
+        String key = (type == TokenType.REFRESH ? "refresh:" : "access:") + tokenId;
+        return accessSessionRedis.opsForValue().get(key);
     }
 
     public void invalidateAccessSession(String tokenId) {
