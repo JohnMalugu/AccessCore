@@ -4,18 +4,12 @@ public enum TokenType {
 
     ACCESS,
     REFRESH,
-    PASSWORD_RESET;
-
-    public boolean isAccess() {
-        return this == ACCESS;
-    }
+    PASSWORD_RESET,
+    MFA_CHALLENGE;
 
     public boolean isRefresh() {
         return this == REFRESH;
     }
 
-    public boolean isPasswordReset() {
-        return this == PASSWORD_RESET;
-    }
 }
 

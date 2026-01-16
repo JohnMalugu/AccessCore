@@ -2,6 +2,7 @@ package com.jcmlabs.AccessCore.UserManagement.Controllers;
 
 
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.ChangePasswordRequest;
+import com.jcmlabs.AccessCore.UserManagement.Payload.Request.MfaVerifyRequestDto;
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordRequestDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +32,10 @@ import static com.jcmlabs.AccessCore.Utilities.ResponseCode.SUCCESS;
 public class AuthorizationController {
     private final AuthorizationServiceHelper authorizationServiceHelper;
 
-    @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthTokenResponse> login(@RequestBody LoginRequestDto request, HttpServletRequest httpRequest) {
+    @PostMapping("/login")
+    public ResponseEntity<AuthTokenResponse> login(@RequestBody LoginRequestDto request, @RequestHeader("X-Device-Id") String deviceId, HttpServletRequest httpRequest) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
-        AuthTokenResponse tokens = authorizationServiceHelper.login(request.username(), request.password(), clientIp,request.scopes());
+        AuthTokenResponse tokens = authorizationServiceHelper.login(request.username(), request.password(), clientIp, deviceId, request.scopes());
         return ResponseEntity.ok(tokens);
     }
 
@@ -46,11 +47,12 @@ public class AuthorizationController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<Void>> logout(Authentication authentication, HttpServletRequest request) {
+    public ResponseEntity<BaseResponse<Void>> logout(@RequestHeader("Authorization") String authorization, HttpServletRequest request) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(request);
-        authorizationServiceHelper.revokeToken(authentication.getName(), clientIp);
+        authorizationServiceHelper.revokeToken(authorization, clientIp);
         return ResponseEntity.ok(new BaseResponse<>(true, SUCCESS, "Logged out successfully"));
     }
+
 
     @PostMapping(value = "/forgot-password",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<BaseResponse<Void>> forgotPassword(@RequestBody UpdatePasswordRequestDto request, HttpServletRequest httpRequest){
@@ -71,6 +73,12 @@ public class AuthorizationController {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
         authorizationServiceHelper.changePassword(authentication.getName(), request.currentPassword(), request.newPassword(), request.confirmPassword(), clientIp);
         return ResponseEntity.ok(new BaseResponse<>(true, SUCCESS, "Password changed"));
+    }
+
+    @PostMapping("/mfa/verify")
+    public ResponseEntity<AuthTokenResponse> verifyMfa(@RequestBody MfaVerifyRequestDto request, HttpServletRequest http) {
+        String ip = RequestClientIpUtility.getClientIpAddress(http);
+        return ResponseEntity.ok(authorizationServiceHelper.verifyMfa(request.mfaToken(), request.code(), request.deviceId(), ip));
     }
 
 }
