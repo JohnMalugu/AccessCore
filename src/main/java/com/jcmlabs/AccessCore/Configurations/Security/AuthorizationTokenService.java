@@ -138,7 +138,8 @@ public class AuthorizationTokenService {
 
         Set<String> tokenIds = redisSecurityService.getUserSessions(username);
         for (String tokenId : tokenIds) {
-            redisSecurityService.invalidateAccessSession(tokenId);
+            redisSecurityService.invalidateSession(tokenId, TokenType.ACCESS);
+            redisSecurityService.invalidateSession(tokenId, TokenType.REFRESH);
         }
         redisSecurityService.clearUserSessions(username);
         repository.findAllByUsernameAndActiveTrue(username).forEach(token -> {
