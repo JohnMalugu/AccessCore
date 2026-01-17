@@ -111,4 +111,57 @@ public class RedisSecurityService {
         );
     }
 
+    public void storeMfaChallenge(
+            String tokenId,
+            String username,
+            String ip,
+            String deviceId,
+            long ttlSeconds
+    ) {
+        stringRedisTemplate.opsForHash().put("mfa:" + tokenId, "user", username);
+        stringRedisTemplate.opsForHash().put("mfa:" + tokenId, "ip", ip);
+        stringRedisTemplate.opsForHash().put("mfa:" + tokenId, "device", deviceId);
+        stringRedisTemplate.expire("mfa:" + tokenId, ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    public boolean isTrustedDevice(String username, String deviceId) {
+        return Boolean.TRUE.equals(
+                stringRedisTemplate.hasKey("auth:device:trusted:" + username + ":" + deviceId)
+        );
+    }
+
+    public void markTrustedDevice(String username, String deviceId) {
+        stringRedisTemplate.opsForValue().set(
+                "auth:device:trusted:" + username + ":" + deviceId,
+                "1",
+                30, TimeUnit.DAYS
+        );
+    }
+
+    public boolean isKnownIp(String username, String ip) {
+        return Boolean.TRUE.equals(
+                stringRedisTemplate.hasKey("auth:ip:known:" + username + ":" + ip)
+        );
+    }
+
+    public void markKnownIp(String username, String ip) {
+        stringRedisTemplate.opsForValue().set(
+                "auth:ip:known:" + username + ":" + ip,
+                "1",
+                30, TimeUnit.DAYS
+        );
+    }
+
+    public long incrementMfaAttempts(String tokenId) {
+        String key = "auth:mfa:attempts:" + tokenId;
+        Long count = stringRedisTemplate.opsForValue().increment(key);
+
+        if (count != null && count == 1) {
+            stringRedisTemplate.expire(key, 5, TimeUnit.MINUTES);
+        }
+        return count == null ? 0 : count;
+    }
+
+
+
 }
