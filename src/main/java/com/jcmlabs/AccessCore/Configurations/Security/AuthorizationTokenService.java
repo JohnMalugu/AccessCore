@@ -42,6 +42,23 @@ public class AuthorizationTokenService {
     private final UserAccountService userAccountService;
     private final RabbitMQProducer rabbitmqProducer;
 
+
+    public AuthTokenResponse issueMfaChallenge(String username, String ip, String deviceId) {
+        OpaqueTokenEntity mfaToken = create(username, ip, TokenType.MFA_CHALLENGE, null);
+
+        cacheToken(mfaToken);
+
+        String signed = crypto.sign(mfaToken.getTokenValue(), TokenType.MFA_CHALLENGE);
+
+        redisSecurityService.storeMfaChallenge(mfaToken.getTokenValue(), username, ip, deviceId, 5 * 60);
+
+        sendOtp(username);
+
+        return AuthTokenResponse.mfaRequired(signed);
+    }
+
+
+
     public AuthTokenResponse issueTokens(String username, String clientIP, Set<String> scopes) {
         OpaqueTokenEntity access = create(username, clientIP, TokenType.ACCESS, scopes);
         OpaqueTokenEntity refresh = create(username, clientIP, TokenType.REFRESH, null);
@@ -54,7 +71,7 @@ public class AuthorizationTokenService {
 
         eventPublisher.publish(new AuthEvent("LOGIN", username, "ACCESS", clientIP, Instant.now()));
 
-        return new AuthTokenResponse(signedAccess, signedRefresh, "Bearer", seconds(access), seconds(refresh), Instant.now(), scopes);
+        return new AuthTokenResponse(signedAccess, signedRefresh, "Bearer", seconds(access), seconds(refresh), Instant.now(), scopes,false);
     }
 
     public void issuePasswordResetToken(String username, String clientIP) {
@@ -211,6 +228,25 @@ public class AuthorizationTokenService {
 
                     return t.getIssuedAt().isAfter(pwdChanged);
                 });
+    }
+
+    @Transactional
+    public AuthTokenResponse verifyMfa(String signedMfaToken, String code, String deviceId, String ip) {
+
+        OpaqueTokenEntity token = validate(signedMfaToken, TokenType.MFA_CHALLENGE).filter(t -> t.getUserIp().equals(ip)).orElseThrow(() -> new BadCredentialsException("Invalid MFA token"));
+
+        if (!otpService.verify(token.getUsername(), code)) {
+            redisSecurityService.incrementMfaAttempts(token.getTokenValue());
+            throw new BadCredentialsException("Invalid code");
+        }
+
+        redisSecurityService.markTrustedDevice(token.getUsername(), deviceId);
+
+        token.setActive(false);
+        repository.save(token);
+        redisSecurityService.invalidateSession(token.getTokenValue(), TokenType.MFA_CHALLENGE);
+
+        return issueTokens(token.getUsername(), ip, Set.of());
     }
 
 
