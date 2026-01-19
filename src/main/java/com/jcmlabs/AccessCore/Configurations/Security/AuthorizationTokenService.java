@@ -5,12 +5,14 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.jcmlabs.AccessCore.Configurations.RabbitMQ.RabbitMQProducer;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.AuthEvent;
 import com.jcmlabs.AccessCore.Configurations.Security.KafkaEvents.TokenEventPublisher;
 import com.jcmlabs.AccessCore.Configurations.Security.Redis.RedisSecurityService;
 import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
+import com.jcmlabs.AccessCore.Shared.Entity.RedisMfaChallenge;
 import com.jcmlabs.AccessCore.Shared.Enums.EmailType;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationStatus;
 import com.jcmlabs.AccessCore.Shared.Enums.NotificationType;
@@ -44,18 +46,22 @@ public class AuthorizationTokenService {
 
 
     public AuthTokenResponse issueMfaChallenge(String username, String ip, String deviceId) {
-        OpaqueTokenEntity mfaToken = create(username, ip, TokenType.MFA_CHALLENGE, null);
 
+        OpaqueTokenEntity mfaToken = create(username, ip, TokenType.MFA_CHALLENGE, null);
         cacheToken(mfaToken);
 
+        String otp = generateOtp();
+
+        RedisMfaChallenge challenge = new RedisMfaChallenge(username, ip, deviceId, crypto.hashOtp(otp), 0);
+
+        redisSecurityService.storeMfaChallenge(mfaToken.getTokenValue(), challenge, 5 * 60);
+
+        sendOtp(username, otp);
+
         String signed = crypto.sign(mfaToken.getTokenValue(), TokenType.MFA_CHALLENGE);
-
-        redisSecurityService.storeMfaChallenge(mfaToken.getTokenValue(), username, ip, deviceId, 5 * 60);
-
-        sendOtp(username);
-
         return AuthTokenResponse.mfaRequired(signed);
     }
+
 
 
 
@@ -83,7 +89,7 @@ public class AuthorizationTokenService {
                 .forEach(t -> {
                     t.setActive(false);
                     repository.save(t);
-                    redisSecurityService.invalidateTokenFlag(t.getTokenValue(), "RESET");
+                    redisSecurityService.invalidateTokenFlag(t.getTokenValue(), TokenType.PASSWORD_RESET);
                 });
 
         OpaqueTokenEntity resetToken = create(username, clientIP, TokenType.PASSWORD_RESET, null);
@@ -142,7 +148,7 @@ public class AuthorizationTokenService {
         // ✅ Invalidate token
         token.setActive(false);
         repository.save(token);
-        redisSecurityService.invalidateTokenFlag(token.getTokenValue(), "RESET");
+        redisSecurityService.invalidateTokenFlag(token.getTokenValue(), TokenType.PASSWORD_RESET);
 
         eventPublisher.publish(new AuthEvent("PASSWORD_RESET_COMPLETED", token.getUsername(), "RESET", clientIp));
 
@@ -231,24 +237,32 @@ public class AuthorizationTokenService {
     }
 
     @Transactional
-    public AuthTokenResponse verifyMfa(String signedMfaToken, String code, String deviceId, String ip) {
+    public AuthTokenResponse verifyMfa(String signed, String code, String deviceId, String ip) {
 
-        OpaqueTokenEntity token = validate(signedMfaToken, TokenType.MFA_CHALLENGE).filter(t -> t.getUserIp().equals(ip)).orElseThrow(() -> new BadCredentialsException("Invalid MFA token"));
+        OpaqueTokenEntity token = validate(signed, TokenType.MFA_CHALLENGE)
+                .orElseThrow(() -> new BadCredentialsException("Invalid MFA token"));
 
-        if (!otpService.verify(token.getUsername(), code)) {
+        RedisMfaChallenge c = redisSecurityService.getMfaChallenge(token.getTokenValue());
+        if (c == null || !c.getDeviceId().equals(deviceId) || !c.getIp().equals(ip)) {
+            throw new BadCredentialsException("MFA mismatch");
+        }
+
+        if (c.getAttempts() >= 5) {
+            redisSecurityService.consumeMfaChallenge(token.getTokenValue());
+            throw new BadCredentialsException("Too many attempts");
+        }
+
+        if (!crypto.verifyOtp(code, c.getOtpHash())) {
             redisSecurityService.incrementMfaAttempts(token.getTokenValue());
             throw new BadCredentialsException("Invalid code");
         }
 
         redisSecurityService.markTrustedDevice(token.getUsername(), deviceId);
-
-        token.setActive(false);
-        repository.save(token);
-        redisSecurityService.invalidateSession(token.getTokenValue(), TokenType.MFA_CHALLENGE);
+        redisSecurityService.markKnownIp(token.getUsername(), ip);
+        redisSecurityService.consumeMfaChallenge(token.getTokenValue());
 
         return issueTokens(token.getUsername(), ip, Set.of());
     }
-
 
     private OpaqueTokenEntity create(String username, String ip, TokenType type, Set<String> scopes) {
         if (type.isRefresh()) {
@@ -291,7 +305,24 @@ public class AuthorizationTokenService {
         return scopes == null || scopes.isBlank() ? Set.of() : Set.of(scopes.split(" "));
     }
 
+    private void sendOtp(String username, String otp) {
 
+        UserAccountEntity user = userAccountService.getActiveUserOrThrow(username);
 
+        NotificationDto notification = NotificationDto.builder().emailTo(username).fullName(user.getFirstName() + " " + user.getLastName()).message("""
+                Your security verification code is:
+                
+                %s
+                
+                This code expires in 5 minutes.
+                If you did not attempt to sign in, secure your account immediately.
+                """.formatted(otp)).notificationType(NotificationType.EMAIL).status(NotificationStatus.PENDING).emailType(EmailType.MFA_OTP).build();
+
+        rabbitmqProducer.sendMessageToRabbitMQ(notification);
+    }
+
+    private String generateOtp() {
+        return String.valueOf(ThreadLocalRandom.current().nextInt(100000, 999999));
+    }
 
 }

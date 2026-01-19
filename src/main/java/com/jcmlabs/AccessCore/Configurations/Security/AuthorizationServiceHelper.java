@@ -25,14 +25,17 @@ public class AuthorizationServiceHelper {
     private final RedisSecurityService redisSecurity;
 
 
-    public AuthTokenResponse login(
-            String username,
-            String password,
-            String clientIp,
-            Set<String> scopes
-    ) {
-        Authentication authentication = authenticate(username, password);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    public AuthTokenResponse login(String username, String password, String clientIp, String deviceId, Set<String> scopes) {
+
+        // 1️⃣ Authenticate credentials ONLY
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+
+        // 2️⃣ Decide if MFA is required
+        if (mfaRequired(username, clientIp, deviceId, scopes)) {
+            return authTokenService.issueMfaChallenge(username, clientIp, deviceId);
+        }
+
+        // 3️⃣ Issue normal tokens
         return authTokenService.issueTokens(username, clientIp, scopes);
     }
 
@@ -79,4 +82,34 @@ public class AuthorizationServiceHelper {
             new UsernamePasswordAuthenticationToken(username, password)
         );
     }
+
+    private boolean mfaRequired(
+            String username,
+            String ip,
+            String deviceId,
+            Set<String> scopes
+    ) {
+
+        if (scopes.contains("ADMIN")) return true;
+
+        if (!redisSecurity.isTrustedDevice(username, deviceId)) {
+            return true;
+        }
+
+        if (!redisSecurity.isKnownIp(username, ip)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public AuthTokenResponse verifyMfa(
+            String mfaToken,
+            String code,
+            String deviceId,
+            String ip
+    ) {
+        return authTokenService.verifyMfa(mfaToken, code, deviceId, ip);
+    }
+
 }

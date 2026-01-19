@@ -25,6 +25,7 @@ public class AuthorizationTokenConfigurationProperties {
         private String accessTokenSecret;
         private String refreshTokenSecret;
         private String passwordResetSecret;
+        private String mfaSecret;
     }
 
     @Getter
@@ -38,7 +39,7 @@ public class AuthorizationTokenConfigurationProperties {
             return switch (type) {
                 case ACCESS -> accessTokenLifespan;
                 case REFRESH -> refreshTokenLifespan;
-                case PASSWORD_RESET -> passwordResetLifespan;
+                case PASSWORD_RESET, MFA_CHALLENGE -> passwordResetLifespan;
             };
         }
     }
