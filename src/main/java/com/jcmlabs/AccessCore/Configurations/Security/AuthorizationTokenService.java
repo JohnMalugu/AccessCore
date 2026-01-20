@@ -306,17 +306,19 @@ public class AuthorizationTokenService {
     }
 
     private void sendOtp(String username, String otp) {
-
         UserAccountEntity user = userAccountService.getActiveUserOrThrow(username);
 
-        NotificationDto notification = NotificationDto.builder().emailTo(username).fullName(user.getFirstName() + " " + user.getLastName()).message("""
-                Your security verification code is:
-                
-                %s
-                
-                This code expires in 5 minutes.
-                If you did not attempt to sign in, secure your account immediately.
-                """.formatted(otp)).notificationType(NotificationType.EMAIL).status(NotificationStatus.PENDING).emailType(EmailType.MFA_OTP).build();
+        String formattedOtp = otp.replaceAll("(.{3})", "$1 ").trim();
+
+        NotificationDto notification = NotificationDto.builder()
+                .emailTo(username)
+                .fullName(user.getFirstName() + " " + user.getLastName())
+                .message(formattedOtp)
+                .subject("Your Security Verification Code")
+                .notificationType(NotificationType.EMAIL)
+                .status(NotificationStatus.PENDING)
+                .emailType(EmailType.MFA_OTP)
+                .build();
 
         rabbitmqProducer.sendMessageToRabbitMQ(notification);
     }
