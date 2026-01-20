@@ -17,7 +17,6 @@ import com.jcmlabs.AccessCore.Configurations.Security.AuthorizationServiceHelper
 import com.jcmlabs.AccessCore.UserManagement.Payload.Request.LoginRequestDto;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.RequestClientIpUtility;
-import com.jcmlabs.AccessCore.Utilities.ResponseCode;
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.RefreshTokenRequest;
 

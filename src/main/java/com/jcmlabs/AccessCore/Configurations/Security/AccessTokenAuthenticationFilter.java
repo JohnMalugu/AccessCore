@@ -29,6 +29,14 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // Skip token authentication for public endpoints
+        if (path.startsWith("/auth/login") || path.startsWith("/auth/forgot-password") || path.startsWith("/auth/reset-password")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
 
         if (header == null || !header.startsWith("Bearer ")) {
@@ -54,10 +62,11 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Authentication auth = new UsernamePasswordAuthenticationToken(session.getUsername(), null, List.of());
-
         SecurityContextHolder.getContext().setAuthentication(auth);
+
         filterChain.doFilter(request, response);
     }
+
 }
 
 
