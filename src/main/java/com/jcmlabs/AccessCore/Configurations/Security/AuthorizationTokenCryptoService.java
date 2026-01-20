@@ -32,11 +32,23 @@ public class AuthorizationTokenCryptoService {
 
     @PostConstruct
     void init() {
+        require(properties.getSigning().getAccessTokenSecret(), "access-token-secret");
+        require(properties.getSigning().getRefreshTokenSecret(), "refresh-token-secret");
+        require(properties.getSigning().getPasswordResetSecret(), "password-reset-secret");
+        require(properties.getSigning().getMfaSecret(), "mfa-secret");
+
         accessKey  = key(properties.getSigning().getAccessTokenSecret());
         refreshKey = key(properties.getSigning().getRefreshTokenSecret());
         resetKey   = key(properties.getSigning().getPasswordResetSecret());
         mfaKey     = key(properties.getSigning().getMfaSecret());
     }
+
+    private void require(String value, String name) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Missing authorization-token.signing." + name);
+        }
+    }
+
 
     private SecretKeySpec key(String secret) {
         return new SecretKeySpec(Base64.getUrlDecoder().decode(secret), "HmacSHA256");
