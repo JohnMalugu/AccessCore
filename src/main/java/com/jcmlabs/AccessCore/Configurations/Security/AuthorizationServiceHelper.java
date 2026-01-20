@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.AuthTokenResponse;
@@ -77,30 +75,10 @@ public class AuthorizationServiceHelper {
             authTokenService.resetPassword(token, password,newPassword, clientIp);
     }
 
-    private Authentication authenticate(String username, String password) {
-        return authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(username, password)
-        );
-    }
-
-    private boolean mfaRequired(
-            String username,
-            String ip,
-            String deviceId,
-            Set<String> scopes
-    ) {
-
-        if (scopes.contains("ADMIN")) return true;
-
-        if (!redisSecurity.isTrustedDevice(username, deviceId)) {
-            return true;
-        }
-
-        if (!redisSecurity.isKnownIp(username, ip)) {
-            return true;
-        }
-
-        return false;
+    private boolean mfaRequired(String username, String ip, String deviceId, Set<String> scopes) {
+        return scopes.contains("ADMIN")
+                || !redisSecurity.isTrustedDevice(username, deviceId)
+                || !redisSecurity.isKnownIp(username, ip);
     }
 
     public AuthTokenResponse verifyMfa(
