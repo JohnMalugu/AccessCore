@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: accesscore-app
+    ports:
+      - "8000:8000"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      # --- DATABASE ---
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+
+      # --- REDIS ---
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+
+      # --- RABBITMQ ---
+      MQ_HOST: ${MQ_HOST}
+      MQ_USER: ${MQ_USER}
+      MQ_PASS: ${MQ_PASS}
+      MQ_PORT: ${MQ_PORT}
+      MQ_EXCHANGE: ${MQ_EXCHANGE}
+      MQ_ROUTING_KEY: ${MQ_ROUTING_KEY}
+      MQ_QUEUE: ${MQ_QUEUE}
+
+      # --- MAIL / SMTP ---
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE}
+      MAIL_SMTP_SSL_ENABLE: ${MAIL_SMTP_SSL_ENABLE}
+
+      # --- SMS / MGov ---
+      MGOV_MESSAGE_URL: ${MGOV_MESSAGE_URL}
+      MGOV_API_KEY: ${MGOV_API_KEY}
+      MGOV_MOBILE_SERVICE_ID: ${MGOV_MOBILE_SERVICE_ID}
+      MGOV_SYSTEM_ID: ${MGOV_SYSTEM_ID}
+      MGOV_SENDER_ID: ${MGOV_SENDER_ID}
+      MGOV_VOTE_CODE: ${MGOV_VOTE_CODE}
+
+      # --- SECURITY / TOKENS ---
+      OTP_PEPPER: ${OTP_PEPPER}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      PASSWORD_RESET_SECRET: ${PASSWORD_RESET_SECRET}
+      MFA_SECRET: ${MFA_SECRET}
+
+      ACCESS_TOKEN_LIFESPAN: ${ACCESS_TOKEN_LIFESPAN}
+      REFRESH_TOKEN_LIFESPAN: ${REFRESH_TOKEN_LIFESPAN}
+      PASSWORD_RESET_LIFESPAN: ${PASSWORD_RESET_LIFESPAN}
+
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  postgres:
+    image: postgres:16
+    container_name: accesscore-postgres
+    environment:
+      POSTGRES_DB: accesscore
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: accesscore-redis
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: accesscore-rabbitmq
+    ports:
+      - "15672:15672"
+
+volumes:
+  postgres_data:
