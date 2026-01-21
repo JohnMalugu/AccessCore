@@ -63,8 +63,6 @@ public class AuthorizationTokenService {
     }
 
 
-
-
     public AuthTokenResponse issueTokens(String username, String clientIP, Set<String> scopes) {
         OpaqueTokenEntity access = create(username, clientIP, TokenType.ACCESS, scopes);
         OpaqueTokenEntity refresh = create(username, clientIP, TokenType.REFRESH, null);
@@ -186,7 +184,6 @@ public class AuthorizationTokenService {
 
     }
 
-
     public void revokeToken(String signedToken, String clientIP) {
         validate(signedToken, TokenType.ACCESS)
                 .filter(t -> t.getUserIp().equals(clientIP))
@@ -205,7 +202,6 @@ public class AuthorizationTokenService {
                 });
     }
 
-
     public Optional<AuthTokenResponse> refresh(String signedRefreshToken, String clientIp) {
 
         return validate(signedRefreshToken, TokenType.REFRESH)
@@ -220,7 +216,6 @@ public class AuthorizationTokenService {
                     return issueTokens(old.getUsername(), clientIp, parseScopes(old.getScopes()));
                 });
     }
-
 
     public Optional<OpaqueTokenEntity> validate(String signedToken, TokenType type) {
 
