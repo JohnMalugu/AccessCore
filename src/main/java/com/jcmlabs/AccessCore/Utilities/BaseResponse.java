@@ -81,6 +81,18 @@ public class BaseResponse<T> {
      * @author JohnMalugu
      */
 
+    public static <T> BaseResponse<T> error(Integer code,String message) {
+        return new BaseResponse<>(false, code, message);
+    }
+
+
+    public static <T> BaseResponse<T> error(Integer code, String message, T data) {
+        BaseResponse<T> response = new BaseResponse<>(false, code, message);
+        response.setData(data);
+        return response;
+    }
+
+
     public static <T> BaseResponse<T> exception(Exception e) {
         log.error("An exception occurred while processing request: ", e);
         return new BaseResponse<>(false, ResponseCode.EXCEPTION, "An exception occurred while processing request");
