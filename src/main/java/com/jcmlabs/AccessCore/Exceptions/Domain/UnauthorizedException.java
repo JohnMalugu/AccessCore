@@ -1,4 +1,4 @@
 package com.jcmlabs.AccessCore.Exceptions.Domain;
 
-public class UnauthorizedException {
+public class UnauthorizedException extends RuntimeException{
 }
