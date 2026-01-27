@@ -4,7 +4,6 @@ package com.jcmlabs.AccessCore.Exceptions.GraphQL;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.jspecify.annotations.NonNull;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.stereotype.Component;
