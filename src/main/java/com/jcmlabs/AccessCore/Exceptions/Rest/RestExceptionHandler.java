@@ -1,5 +1,6 @@
-package com.jcmlabs.AccessCore.Exceptions;
+package com.jcmlabs.AccessCore.Exceptions.Rest;
 
+import com.jcmlabs.AccessCore.Exceptions.BusinessException;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,13 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
-public class GlobalExceptionHandler {
+public class RestExceptionHandler {
 
     /**
      * Authentication errors (wrong username/password)
