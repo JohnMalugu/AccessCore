@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.Exceptions.GraphQL;
 
 
+import com.jcmlabs.AccessCore.Exceptions.Domain.ResourceNotFoundException;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
