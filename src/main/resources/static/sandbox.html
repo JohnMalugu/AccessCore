@@ -2,9 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Apollo Sandbox</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        #embedded-sandbox { width: 100vw; height: 100vh; }
+    </style>
 </head>
 <body>
-
+<div id='embedded-sandbox'></div>
+<script src="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.umd.production.min.js"></script>
+<script>
+    new window.EmbeddedSandbox({
+        target: '#embedded-sandbox',
+        // Point this to your Spring Boot GraphQL endpoint
+        initialEndpoint: 'http://localhost:8000/graphql',
+        includeCookies: true, // Useful if you use session-based auth
+    });
+</script>
 </body>
 </html>
