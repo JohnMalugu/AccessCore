@@ -1,9 +1,5 @@
 package com.jcmlabs.AccessCore.UserManagement.Entities;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.hibernate.annotations.SoftDelete;
 
 import com.jcmlabs.AccessCore.Utilities.BaseEntity;
 
@@ -16,13 +12,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
+import org.hibernate.envers.Audited;
+
+@Audited
+@Builder
 @Getter
 @Setter
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "permissions")
-@SoftDelete
+@SQLDelete(sql = "UPDATE permissions SET deleted = true WHERE id = ?")
+@SQLRestriction("deleted = false")
 public class PermissionEntity extends BaseEntity{
 
     @Column()
@@ -37,6 +45,9 @@ public class PermissionEntity extends BaseEntity{
     @Column
     private String description;
 
+    @Builder.Default
     @ManyToMany(mappedBy = "permissions")
-    private List<RoleEntity> roles = new ArrayList<>();
+    private Set<RoleEntity> roles = new HashSet<>();
+
 }
+
