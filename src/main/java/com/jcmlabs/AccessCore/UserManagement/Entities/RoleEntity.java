@@ -3,7 +3,6 @@ package com.jcmlabs.AccessCore.UserManagement.Entities;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.jcmlabs.AccessCore.UserManagement.Entities.PermissionEntity;
 import com.jcmlabs.AccessCore.Utilities.BaseEntity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.SQLDelete;
