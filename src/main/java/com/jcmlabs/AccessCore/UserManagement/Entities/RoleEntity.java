@@ -1,31 +1,32 @@
 package com.jcmlabs.AccessCore.UserManagement.Entities;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.hibernate.annotations.ManyToAny;
-import org.hibernate.annotations.SoftDelete;
-
+import com.jcmlabs.AccessCore.UserManagement.Entities.PermissionEntity;
 import com.jcmlabs.AccessCore.Utilities.BaseEntity;
+import jakarta.persistence.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
+@Audited
 @Getter
 @Setter
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "roles")
-@SoftDelete
-public class RoleEntity extends BaseEntity{
-    
+@SQLDelete(sql = "UPDATE roles SET deleted = true WHERE id = ?")
+@SQLRestriction("deleted = false")
+public class RoleEntity extends BaseEntity {
+
     @Column()
     private String name;
 
@@ -35,6 +36,16 @@ public class RoleEntity extends BaseEntity{
     @Column
     private String description;
 
-    @ManyToAny(fetch = FetchType.EAGER)
-    List<PermissionEntity> permissions = new ArrayList<>();
+    @ManyToMany(mappedBy = "roles")
+    private Set<UserAccountEntity> users = new HashSet<>();
+
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private Set<PermissionEntity> permissions = new HashSet<>();
+
 }
