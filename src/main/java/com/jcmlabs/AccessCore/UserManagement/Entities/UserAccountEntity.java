@@ -1,21 +1,15 @@
 package com.jcmlabs.AccessCore.UserManagement.Entities;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
+import jakarta.persistence.*;
 import org.hibernate.annotations.SoftDelete;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.jcmlabs.AccessCore.Utilities.BaseEntity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -60,8 +54,13 @@ public class UserAccountEntity extends BaseEntity{
 	@Column()
 	private String lastModifiedIp;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    private List<RoleEntity> roles;
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(
+			name = "user_roles",
+			joinColumns = @JoinColumn(name = "user_id"),
+			inverseJoinColumns = @JoinColumn(name = "role_id")
+	)
+	private Set<RoleEntity> roles = new HashSet<>();
 
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
