@@ -2,6 +2,8 @@ package com.jcmlabs.AccessCore.Configurations.Security;
 
 import com.jcmlabs.AccessCore.Configurations.Security.Redis.RedisSecurityService;
 import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
+import com.jcmlabs.AccessCore.UserManagement.Entities.UserAccountEntity;
+import com.jcmlabs.AccessCore.UserManagement.Repositories.UserAccountRepository;
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.TokenType;
 import com.jcmlabs.AccessCore.Utilities.RequestClientIpUtility;
 import jakarta.servlet.FilterChain;
@@ -10,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +28,7 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final RedisSecurityService redisSecurityService;
     private final AuthorizationTokenCryptoService crypto;
+    private final UserAccountRepository userAccountRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -54,7 +58,9 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Authentication auth = new UsernamePasswordAuthenticationToken(session.getUsername(), null, List.of());
+        UserAccountEntity user = userAccountRepository.findByUsername(session.getUsername()).orElseThrow(() -> new BadCredentialsException("User not found"));
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         filterChain.doFilter(request, response);
