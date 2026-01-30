@@ -60,7 +60,7 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
 
         UserAccountEntity user = userAccountRepository.findByUsername(session.getUsername()).orElseThrow(() -> new BadCredentialsException("User not found"));
 
-        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, List.of());
+        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         filterChain.doFilter(request, response);
