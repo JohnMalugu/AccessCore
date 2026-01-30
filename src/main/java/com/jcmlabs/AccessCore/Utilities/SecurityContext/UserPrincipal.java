@@ -1,5 +1,6 @@
 package com.jcmlabs.AccessCore.Utilities.SecurityContext;
 
+import com.jcmlabs.AccessCore.UserManagement.Enums.AccountStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
