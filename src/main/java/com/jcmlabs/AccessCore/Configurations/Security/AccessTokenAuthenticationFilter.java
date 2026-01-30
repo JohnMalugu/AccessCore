@@ -33,7 +33,6 @@ public class AccessTokenAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
         String header = request.getHeader("Authorization");
 
         if (header == null || !header.startsWith("Bearer ")) {
