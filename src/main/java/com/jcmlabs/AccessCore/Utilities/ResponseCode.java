@@ -27,4 +27,12 @@ public class ResponseCode {
     public static final int PASSWORD_MISMATCH = 4221;
     public static final int LOCKED = 4222;
     public static final int VALIDATION_ERROR = 4223;
+
+    public static final int MFA_REQUIRED = 4300;
+    public static final int MFA_INVALID = 4301;
+    public static final int MFA_EXPIRED = 4302;
+    public static final int MFA_LOCKED = 4303;
+    public static final int MFA_MISMATCH = 4304;
+    public static final int MFA_NOT_CONFIGURED = 4305;
+    public static final int MFA_ALREADY_VERIFIED = 4306;
 }
