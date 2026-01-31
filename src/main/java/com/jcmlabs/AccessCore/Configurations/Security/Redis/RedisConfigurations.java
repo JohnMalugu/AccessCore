@@ -5,55 +5,54 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import com.jcmlabs.AccessCore.Shared.Entity.RedisMfaChallenge;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfigurations {
 
-    // RedisTemplate for Access and Refresh tokens
     @Bean
-    public RedisTemplate<String, RedisAccessSession> redisAccessSessionTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, RedisAccessSession> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
+    public RedisTemplate<String, RedisAccessSession> redisAccessSessionTemplate(RedisConnectionFactory factory) {
+        return createTypedTemplate(factory, RedisAccessSession.class);
+    }
 
-        // Keys as strings
+    @Bean
+    public RedisTemplate<String, RedisMfaChallenge> redisMfaChallengeTemplate(RedisConnectionFactory factory) {
+        return createTypedTemplate(factory, RedisMfaChallenge.class);
+    }
+
+    @Bean
+    public RedisTemplate<String, RedisVerificationToken> redisVerificationTemplate(RedisConnectionFactory factory) {
+        return createTypedTemplate(factory, RedisVerificationToken.class);
+    }
+
+    @Bean
+    public RedisTemplate<String, RedisRegistrationVerification> redisRegistrationVerificationTemplate(RedisConnectionFactory factory) {
+        return createTypedTemplate(factory, RedisRegistrationVerification.class);
+    }
+
+    /**
+     * Helper method to create a typed RedisTemplate.
+     * This avoids the "LinkedHashMap" casting issue by explicitly
+     * binding the serializer to the target class.
+     */
+    private <T> RedisTemplate<String, T> createTypedTemplate(RedisConnectionFactory factory, Class<T> clazz) {
+        RedisTemplate<String, T> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+
+        // Standard String serializer for keys
         template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
 
-        // Values as JSON
-        GenericJacksonJsonRedisSerializer valueSerializer = GenericJacksonJsonRedisSerializer.builder().build();
-        template.setValueSerializer(valueSerializer);
-        template.setHashValueSerializer(valueSerializer);
+        // Modern Typed Jackson serializer for values (Spring 4.x style)
+        JacksonJsonRedisSerializer<T> serializer = new JacksonJsonRedisSerializer<>(clazz);
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
 
         template.afterPropertiesSet();
         return template;
     }
-
-    // RedisTemplate for MFA challenges
-    @Bean
-    public RedisTemplate<String, RedisMfaChallenge> redisMfaChallengeTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, RedisMfaChallenge> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-
-        template.setKeySerializer(new StringRedisSerializer());
-
-        GenericJacksonJsonRedisSerializer valueSerializer = GenericJacksonJsonRedisSerializer.builder().build();
-        template.setValueSerializer(valueSerializer);
-        template.setHashValueSerializer(valueSerializer);
-
-        template.afterPropertiesSet();
-        return template;
-    }
-
-    // StringRedisTemplate for simple key-value operations (rate limiting, OTP, trust flags)
-    // Spring Boot auto-configures this bean, so you may not need to define it manually.
-    // @Bean
-    // public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
-    //     return new StringRedisTemplate(connectionFactory);
-    // }
 }
-
-
-
