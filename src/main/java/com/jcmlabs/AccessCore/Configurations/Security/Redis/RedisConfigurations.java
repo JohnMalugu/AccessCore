@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.Configurations.Security.Redis;
 
 import com.jcmlabs.AccessCore.Shared.Entity.RedisAccessSession;
+import com.jcmlabs.AccessCore.Shared.Entity.RedisRegistrationVerification;
 import com.jcmlabs.AccessCore.Shared.Entity.RedisVerificationToken;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
