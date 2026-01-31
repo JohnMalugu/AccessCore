@@ -1,8 +1,7 @@
-package com.jcmlabs.AccessCore.Shared.Exceptions.Domain;
+package com.jcmlabs.AccessCore.Exceptions.Domain;
 
 
 
-import com.jcmlabs.AccessCore.Exceptions.Domain.DomainException;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
 import lombok.Getter;
 
