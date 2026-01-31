@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.Exceptions.Rest;
 
 import com.jcmlabs.AccessCore.Exceptions.BusinessException;
+import com.jcmlabs.AccessCore.Exceptions.Domain.MfaException;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,6 +60,12 @@ public class RestExceptionHandler {
     public ResponseEntity<BaseResponse<Object>> handleBusinessException(BusinessException ex) {
 
         return ResponseEntity.badRequest().body(BaseResponse.error(ex.getCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(MfaException.class)
+    public ResponseEntity<BaseResponse<Object>> handleMfa(MfaException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(BaseResponse.error(ex.getCode(), ex.getMessage()));
     }
 
     /**
