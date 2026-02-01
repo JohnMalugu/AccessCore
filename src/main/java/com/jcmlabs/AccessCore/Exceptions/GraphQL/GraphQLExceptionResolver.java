@@ -21,20 +21,20 @@ public class GraphQLExceptionResolver extends DataFetcherExceptionResolverAdapte
             @NonNull DataFetchingEnvironment env
     ) {
 
-        if (ex instanceof ResourceNotFoundException rnfe) {
-            return GraphqlErrorBuilder.newError(env)
-                    .message(rnfe.getMessage())
-                    .errorType(ErrorType.DataFetchingException)
-                    .extensions(Map.of(
-                            "code", GraphQLErrorCodes.NOT_FOUND,
-                            "resource", rnfe.getResource(),
-                            "field", rnfe.getField(),
-                            "value", rnfe.getValue()
-                    ))
-                    .build();
-        }
+        return switch (ex){
 
-        return null;
+            case ResourceNotFoundException rnfe -> GraphqlErrorBuilder.newError(env)
+                   .message(rnfe.getMessage())
+                   .errorType(ErrorType.DataFetchingException)
+                   .extensions(Map.of(
+                           "code", GraphQLErrorCodes.NOT_FOUND,
+                           "resource", rnfe.getResource(),
+                           "field", rnfe.getField(),
+                           "value", rnfe.getValue()
+                   ))
+                   .build();
+            default -> throw new IllegalStateException("Unexpected value: " + ex);
+        };
     }
 }
 
