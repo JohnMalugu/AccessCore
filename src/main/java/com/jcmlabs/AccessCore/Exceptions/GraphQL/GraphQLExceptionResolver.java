@@ -2,6 +2,7 @@ package com.jcmlabs.AccessCore.Exceptions.GraphQL;
 
 
 import com.jcmlabs.AccessCore.Exceptions.Domain.ResourceNotFoundException;
+import com.jcmlabs.AccessCore.Utilities.ResponseCode;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
@@ -23,16 +24,21 @@ public class GraphQLExceptionResolver extends DataFetcherExceptionResolverAdapte
 
         return switch (ex){
 
-            case ResourceNotFoundException rnfe -> GraphqlErrorBuilder.newError(env)
-                   .message(rnfe.getMessage())
-                   .errorType(ErrorType.DataFetchingException)
-                   .extensions(Map.of(
-                           "code", GraphQLErrorCodes.NOT_FOUND,
-                           "resource", rnfe.getResource(),
-                           "field", rnfe.getField(),
-                           "value", rnfe.getValue()
-                   ))
-                   .build();
+            case ResourceNotFoundException rnfe ->
+                    GraphqlErrorBuilder.newError(env)
+                            .message(rnfe.getMessage())
+                            .extensions(Map.of(
+                                    "code", ResponseCode.NOT_FOUND,
+                                    "error", GraphQLErrorCodes.NOT_FOUND,
+                                    "details", Map.of(
+                                            "resource", rnfe.getResource(),
+                                            "field", rnfe.getField(),
+                                            "value", rnfe.getValue()
+                                    )
+                            ))
+                            .build();
+
+
             default -> throw new IllegalStateException("Unexpected value: " + ex);
         };
     }
