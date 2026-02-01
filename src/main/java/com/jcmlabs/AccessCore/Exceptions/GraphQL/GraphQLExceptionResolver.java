@@ -8,6 +8,7 @@ import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
 import org.jspecify.annotations.NonNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.stereotype.Component;
 import graphql.ErrorType;
@@ -45,6 +46,16 @@ public class GraphQLExceptionResolver extends DataFetcherExceptionResolverAdapte
                             .extensions(Map.of(
                                     "code", be.getCode(),
                                     "error", GraphQLErrorCodes.BAD_REQUEST
+                            ))
+                            .build();
+
+
+            case DataIntegrityViolationException ignored ->
+                    GraphqlErrorBuilder.newError(env)
+                            .message("Duplicate or invalid data detected")
+                            .extensions(Map.of(
+                                    "code", ResponseCode.DUPLICATE,
+                                    "error", GraphQLErrorCodes.CONFLICT
                             ))
                             .build();
 
