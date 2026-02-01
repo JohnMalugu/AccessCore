@@ -10,6 +10,7 @@ import graphql.schema.DataFetchingEnvironment;
 import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 import graphql.ErrorType;
 
@@ -56,6 +57,15 @@ public class GraphQLExceptionResolver extends DataFetcherExceptionResolverAdapte
                             .extensions(Map.of(
                                     "code", ResponseCode.DUPLICATE,
                                     "error", GraphQLErrorCodes.CONFLICT
+                            ))
+                            .build();
+
+            case BadCredentialsException se ->
+                    GraphqlErrorBuilder.newError(env)
+                            .message(se.getMessage())
+                            .extensions(Map.of(
+                                    "code", ResponseCode.UNAUTHORIZED,
+                                    "error", GraphQLErrorCodes.UNAUTHORIZED
                             ))
                             .build();
 
