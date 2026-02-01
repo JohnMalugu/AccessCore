@@ -1,6 +1,7 @@
 package com.jcmlabs.AccessCore.Exceptions.GraphQL;
 
 
+import com.jcmlabs.AccessCore.Exceptions.BusinessException;
 import com.jcmlabs.AccessCore.Exceptions.Domain.ResourceNotFoundException;
 import com.jcmlabs.AccessCore.Utilities.ResponseCode;
 import graphql.GraphQLError;
@@ -38,6 +39,14 @@ public class GraphQLExceptionResolver extends DataFetcherExceptionResolverAdapte
                             ))
                             .build();
 
+            case BusinessException be ->
+                    GraphqlErrorBuilder.newError(env)
+                            .message(be.getMessage())
+                            .extensions(Map.of(
+                                    "code", be.getCode(),
+                                    "error", GraphQLErrorCodes.BAD_REQUEST
+                            ))
+                            .build();
 
             default -> throw new IllegalStateException("Unexpected value: " + ex);
         };
