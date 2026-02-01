@@ -48,7 +48,6 @@ public class RedisConfigurations {
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
 
-        // Modern Typed Jackson serializer for values (Spring 4.x style)
         JacksonJsonRedisSerializer<T> serializer = new JacksonJsonRedisSerializer<>(clazz);
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
