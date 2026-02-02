@@ -34,7 +34,7 @@ public class AuthorizationController {
     @PostMapping("/login")
     public ResponseEntity<AuthTokenResponse> login(@RequestBody LoginRequestDto request, @RequestHeader("X-Device-Id") String deviceId, HttpServletRequest httpRequest) {
         String clientIp = RequestClientIpUtility.getClientIpAddress(httpRequest);
-        AuthTokenResponse tokens = authorizationServiceHelper.login(request.username(), request.password(), clientIp, deviceId, request.scopes());
+        AuthTokenResponse tokens = authorizationServiceHelper.login(request.username(), request.password(), clientIp, deviceId);
         return ResponseEntity.ok(tokens);
     }
 
