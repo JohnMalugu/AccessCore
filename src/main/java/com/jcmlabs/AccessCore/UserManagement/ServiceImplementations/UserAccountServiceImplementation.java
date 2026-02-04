@@ -10,6 +10,7 @@ import com.jcmlabs.AccessCore.UserManagement.Payload.Request.UpdatePasswordReque
 import com.jcmlabs.AccessCore.UserManagement.Services.UserAccountService;
 import com.jcmlabs.AccessCore.Utilities.BaseResponse;
 import com.jcmlabs.AccessCore.Utilities.ConfigurationUtilities.PasswordPolicy;
+import com.jcmlabs.AccessCore.Utilities.SecurityContext.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -91,6 +92,7 @@ public class UserAccountServiceImplementation implements UserDetailsService, Use
 
     @Override
     public BaseResponse<UserAccountEntity> getAllUsers(UserAccountFilters filters) {
+        SecurityUtil.currentUser();
         return null;
     }
 
