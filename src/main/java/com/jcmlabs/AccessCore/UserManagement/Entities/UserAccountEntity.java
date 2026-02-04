@@ -5,6 +5,7 @@ import java.util.*;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.SoftDelete;
+import org.hibernate.envers.Audited;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -15,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Audited
 @Getter
 @Setter
 @AllArgsConstructor
