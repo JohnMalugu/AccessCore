@@ -1,5 +1,6 @@
 package com.jcmlabs.AccessCore.Configurations.Security;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.jcmlabs.AccessCore.Configurations.Security.Redis.RedisSecurityService;
@@ -23,18 +24,20 @@ public class AuthorizationServiceHelper {
     private final RedisSecurityService redisSecurity;
 
 
-    public AuthTokenResponse login(String username, String password, String clientIp, String deviceId, Set<String> scopes) {
+    public AuthTokenResponse login(String username, String password, String clientIp, String deviceId) {
 
         // 1️⃣ Authenticate credentials ONLY
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        Set<String> dummyScope = new HashSet<>();
+        dummyScope.add("Admin");
 
         // 2️⃣ Decide if MFA is required
-        if (mfaRequired(username, clientIp, deviceId, scopes)) {
+        if (mfaRequired(username, clientIp, deviceId, dummyScope)) {
             return authTokenService.issueMfaChallenge(username, clientIp, deviceId);
         }
 
         // 3️⃣ Issue normal tokens
-        return authTokenService.issueTokens(username, clientIp, scopes);
+        return authTokenService.issueTokens(username, clientIp, dummyScope);
     }
 
     public AuthTokenResponse refresh(String refreshToken, String clientIp) {
