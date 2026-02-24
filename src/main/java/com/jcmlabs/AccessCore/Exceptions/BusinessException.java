@@ -12,4 +12,8 @@ public class BusinessException extends RuntimeException {
         this.code = code;
     }
 
+public static BusinessException of(Integer code, String message) {
+    return new BusinessException(code, message);
+}
+
 }
