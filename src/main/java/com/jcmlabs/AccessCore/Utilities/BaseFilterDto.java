@@ -18,3 +18,4 @@ public class BaseFilterDto {
     private Long updatedBy;
     private Boolean active;
 }
+//This shud be a record class
